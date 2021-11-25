@@ -1,11 +1,16 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Datadog Upload dSYMs'
+description: 'Upload dSYM files to Datadog to symbolicate your crash reports.'
+author: 'Datadog'
 inputs:
-  milliseconds: # change this
+  api_key:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'Datadog API key.'
+  dsym_paths: 
+    required: true
+    description: 'Path to dSYM files. Support folder and/or zip files'
+  dry_run: 
+    required: false
+    description: 'If true, it will run the command without the final step of upload. All other checks are performed.'
 runs:
   using: 'node12'
   main: 'dist/index.js'
