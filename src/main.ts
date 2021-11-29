@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+import {platform} from 'os'
 import {BaseContext, Cli} from 'clipanion'
 import {UploadCommand} from '@datadog/datadog-ci/dist/commands/dsyms/upload'
 
@@ -23,6 +24,11 @@ export const upload = async (path: string, dry_run: boolean, context: BaseContex
 
 export const main = async (): Promise<void> => {
   try {
+
+    if (platform() !== 'darwin') {
+      throw new Error("This Action runs on macOS only.")
+    }
+
     process.env.DATADOG_API_KEY = core.getInput('api_key', {required: true})
 
     const context = {

@@ -1,13 +1,7 @@
 import * as action from '../main'
 import * as core from '@actions/core'
-import {EOL, platform} from 'os'
 import {describe, expect, test} from '@jest/globals'
-
-if (platform() !== 'darwin') {
-  //eslint-disable-next-line
-  require('@datadog/datadog-ci/dist/commands/dsyms/utils').dwarfdumpUUID = jest.fn()
-    .mockResolvedValue(['BD8CE358-D5F3-358B-86DC-CBCF2148097B'])
-}
+import {EOL} from 'os'
 
 describe('Github Action', () => {
   describe('validate inputs', () => {
