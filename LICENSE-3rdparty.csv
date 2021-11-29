@@ -1,0 +1,15 @@
+Component,Origin,License,Copyright
+module,@actions/core,MIT,Copyright 2019 GitHub
+module,@datadog/datadog-ci,Apache-2.0,Copyright 2020 Datadog Inc
+development,@types/jest,MIT,Copyright Facebook Inc. and its affiliates
+development,@types/node,MIT,Copyright Node.js contributors
+development,@typescript-eslint/parser,BSD-2-Clause,Copyright JS Foundation and other contributors
+development,@vercel/ncc,MIT,Copyright 2018 ZEIT Inc
+development,eslint,MIT,Copyright OpenJS Foundation and other contributors
+development,eslint-plugin-github,MIT,Copyright 2016 GitHub Inc
+development,eslint-plugin-jest,MIT,Copyright 2018 Jonathan Kim
+development,jest,MIT,Copyright Facebook Inc. and its affiliates
+development,js-yaml,MIT,Copyright 2011-2015 by Vitaly Puzrin
+development,prettier,MIT,Copyright James Long and contributors
+development,ts-jest,MIT,Copyright 2016-2018 ts-jest
+development,typescript,Apache-2.0,Copyright Microsoft Corporation
