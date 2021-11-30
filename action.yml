@@ -7,7 +7,7 @@ inputs:
     description: 'Datadog API key.'
   dsym_paths: 
     required: true
-    description: 'Path to dSYM files. Support folder and/or zip files'
+    description: 'Path to dSYM files. Supports folder and/or zip files'
   dry_run: 
     required: false
     description: 'If true, it will run the command without the final step of upload. All other checks are performed.'
