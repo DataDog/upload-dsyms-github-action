@@ -10,7 +10,6 @@
     "rules": {
       "i18n-text/no-en": "off",
       "eslint-comments/no-use": "off",
-      "eslint-comments/no-unlimited-disable" :"off",
       "import/no-namespace": "off",
       "no-unused-vars": "off",
       "filenames/match-regex": "off",
@@ -47,7 +46,8 @@
       "semi": "off",
       "@typescript-eslint/semi": ["error", "never"],
       "@typescript-eslint/type-annotation-spacing": "error",
-      "@typescript-eslint/unbound-method": "error"
+      "@typescript-eslint/unbound-method": "error",
+      "sort-imports": "off"
     },
     "env": {
       "node": true,

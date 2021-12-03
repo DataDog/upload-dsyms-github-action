@@ -1,7 +1,6 @@
-import * as action from '../main'
-import * as core from '@actions/core'
-import {describe, expect, test} from '@jest/globals'
 import {EOL} from 'os'
+import * as core from '@actions/core'
+import * as action from '../main'
 
 describe('Github Action', () => {
   describe('validate inputs', () => {
@@ -100,8 +99,8 @@ describe('Github Action', () => {
       return {
         stdout: {
           toString: () => data,
-          write: (input: string) => (data += input)
-        }
+          write: (input: string) => (data += input),
+        },
       }
     }
 
