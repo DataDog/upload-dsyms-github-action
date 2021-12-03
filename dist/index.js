@@ -36,6 +36,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.main = exports.upload = exports.cli = void 0;
+const os_1 = __nccwpck_require__(2037);
 const core = __importStar(__nccwpck_require__(2186));
 const clipanion_1 = __nccwpck_require__(5172);
 const upload_1 = __nccwpck_require__(7779);
@@ -60,11 +61,14 @@ const upload = (path, dry_run, context) => __awaiter(void 0, void 0, void 0, fun
 exports.upload = upload;
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        if ((0, os_1.platform)() !== 'darwin') {
+            throw new Error('This Action runs on macOS only.');
+        }
         process.env.DATADOG_API_KEY = core.getInput('api_key', { required: true });
         const context = {
             stdin: process.stdin,
             stdout: process.stdout,
-            stderr: process.stderr
+            stderr: process.stderr,
         };
         const paths = core.getMultilineInput('dsym_paths', { required: true });
         const dry_run = core.getBooleanInput('dry_run');
