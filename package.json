@@ -1,7 +1,6 @@
 {
   "name": "upload-dsyms-github-action",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Upload dSYM files to Datadog to symbolicate your crash reports.",
   "main": "lib/main.js",
   "scripts": {
@@ -19,8 +18,10 @@
   },
   "keywords": [
     "actions",
-    "node",
-    "setup"
+    "datadog",
+    "rum",
+    "ios",
+    "dsyms"
   ],
   "author": "",
   "license": "MIT",
