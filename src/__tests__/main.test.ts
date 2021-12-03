@@ -31,9 +31,8 @@ describe('Github Action', () => {
       expect(setFailedMock).toHaveBeenCalledWith('Input required and not supplied: dsym_paths')
     })
 
-    test('with all parameter', async () => {
+    test.each([true, false])('with dry_run: %p', async (dry_run) => {
       // Given
-      const dry_run = Math.random() < 0.5
       jest.spyOn(core, 'getInput').mockImplementation(() => 'xxx')
       jest.spyOn(core, 'getMultilineInput').mockImplementation(() => ['foo', 'bar'])
       jest.spyOn(core, 'getBooleanInput').mockImplementation(() => dry_run)
