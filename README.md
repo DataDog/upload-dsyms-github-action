@@ -4,6 +4,10 @@
 This Datadog Github Action uploads dSYM files to Datadog in order to symbolicate crash reports.
 > This action runs on a `macos` environment only.
 
+## Setup
+
+An [API key](https://app.datadoghq.com/organization-settings/api-keys) is required to upload dSYM files to Datadog.
+
 ## Usage
 
 ```yml
