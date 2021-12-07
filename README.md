@@ -7,7 +7,7 @@ This Datadog Github Action uploads dSYM files to Datadog in order to symbolicate
 ## Setup
 
 An [API key](https://app.datadoghq.com/organization-settings/api-keys) is required to upload dSYM files to Datadog.
-It is possible to configure the tool to use Datadog EU by defining the `site` parameter to `datadoghq.eu`. By defaut the requests are sent to Datadog US.
+It is possible to configure the action to use Datadog EU by defining the `site` parameter to `datadoghq.eu`. By default the upload is sent to Datadog US.
 
 ## Usage
 
