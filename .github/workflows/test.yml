@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ./
         with:
-          api_key: ${{ secrets.DATADOG_API_KEY }}
+          api_key: "xyz" # ${{ secrets.DATADOG_API_KEY }}
           dsym_paths: |
             src/__tests__/fixtures/test
             src/__tests__/fixtures/test.zip
