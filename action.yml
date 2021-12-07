@@ -5,9 +5,13 @@ inputs:
   api_key:
     required: true
     description: 'Datadog API key.'
+  site:
+    required: false
+    description: 'Datadog site region. `datadoghq.com` by default, use `datadoghq.eu` for the EU.'
+    default: 'datadoghq.com'
   dsym_paths: 
     required: true
-    description: 'Path to dSYM files. Supports folder and/or zip files'
+    description: 'Path to dSYM files. Supports folder and/or zip files.'
   dry_run: 
     required: false
     description: 'If true, it will run the command without the final step of upload. All other checks are performed.'
