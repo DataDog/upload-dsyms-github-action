@@ -27,7 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.6.0",
-    "@datadog/datadog-ci": "^0.17.10"
+    "@datadog/datadog-ci": "^0.17.11"
   },
   "devDependencies": {
     "@types/node": "^16.11.12",
