@@ -68,7 +68,6 @@ describe('Github Action', () => {
       expect(uploadMock).toHaveBeenCalledTimes(2)
       expect(uploadMock).toHaveBeenNthCalledWith(1, 'foo', dry_run, context)
       expect(uploadMock).toHaveBeenNthCalledWith(2, 'bar', dry_run, context)
-      expect(process.env.DATADOG_SITE).toBe('datadoghq.com')
     })
   })
 

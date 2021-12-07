@@ -65,7 +65,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             throw new Error('This Action runs on macOS only.');
         }
         process.env.DATADOG_API_KEY = core.getInput('api_key', { required: true });
-        process.env.DATADOG_SITE = core.getInput('site') || 'datadoghq.com';
+        process.env.DATADOG_SITE = core.getInput('site');
         const context = {
             stdin: process.stdin,
             stdout: process.stdout,
