@@ -29,6 +29,7 @@ export const main = async (): Promise<void> => {
     }
 
     process.env.DATADOG_API_KEY = core.getInput('api_key', {required: true})
+    process.env.DATADOG_SITE = core.getInput('site')
 
     const context = {
       stdin: process.stdin,

@@ -6,6 +6,8 @@ describe('Github Action', () => {
   describe('validate inputs', () => {
     afterEach(() => {
       jest.restoreAllMocks()
+      process.env.DATADOG_API_KEY = undefined
+      process.env.DATADOG_SITE = undefined
     })
 
     test('with no api_key parameter', async () => {
@@ -31,9 +33,29 @@ describe('Github Action', () => {
       expect(setFailedMock).toHaveBeenCalledWith('Input required and not supplied: dsym_paths')
     })
 
+    test('with eu site', async () => {
+      // Given
+      jest.spyOn(core, 'getInput').mockImplementation((name) => {
+        if (name === 'site') return 'datadoghq.eu'
+        if (name === 'api_key') return 'xxx'
+        return ''
+      })
+      jest.spyOn(core, 'getMultilineInput').mockImplementation(() => ['foo', 'bar'])
+      jest.spyOn(action, 'upload').mockImplementation(async () => Promise.resolve(0))
+
+      // When
+      await action.main()
+
+      // Then
+      expect(process.env.DATADOG_SITE).toBe('datadoghq.eu')
+    })
+
     test.each([true, false])('with dry_run: %p', async (dry_run) => {
       // Given
-      jest.spyOn(core, 'getInput').mockImplementation(() => 'xxx')
+      jest.spyOn(core, 'getInput').mockImplementation((name) => {
+        if (name === 'api_key') return 'xxx'
+        return ''
+      })
       jest.spyOn(core, 'getMultilineInput').mockImplementation(() => ['foo', 'bar'])
       jest.spyOn(core, 'getBooleanInput').mockImplementation(() => dry_run)
       const uploadMock = jest.spyOn(action, 'upload').mockImplementation(async () => Promise.resolve(0))
