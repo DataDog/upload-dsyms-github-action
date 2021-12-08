@@ -1,6 +1,9 @@
 name: 'Datadog Upload dSYMs'
 description: 'Upload dSYM files to Datadog to symbolicate your crash reports.'
 author: 'Datadog'
+branding:
+  icon: upload
+  color: purple
 inputs:
   api_key:
     required: true
