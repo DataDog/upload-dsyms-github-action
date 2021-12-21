@@ -85506,7 +85506,7 @@ module.exports = require("zlib");
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"0.17.11"};
+module.exports = {"i8":"0.17.12"};
 
 /***/ }),
 
