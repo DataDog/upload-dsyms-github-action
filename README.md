@@ -1,14 +1,15 @@
 # Datadog Upload dSYMs Github Action
 [![](https://github.com/DataDog/upload-dsyms-github-action/workflows/build-test/badge.svg)](https://github.com/Datadog/upload-dsyms-github-action/actions)
 
-This Datadog Github Action uploads dSYM files to Datadog in order to symbolicate crash reports.
-> This action runs on a `macos` environment only.
+This Datadog GitHub Action uploads dSYM files to Datadog to symbolicate crash reports.
+> This action runs only on `macos` environments.
 
 ## Setup
 
-An [API key](https://app.datadoghq.com/organization-settings/api-keys) is required to upload dSYM files to Datadog. Make sure to store this key in a secure storage, such as [Github Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets).
+An [API key](https://app.datadoghq.com/organization-settings/api-keys) is required to upload dSYM files to Datadog. Store this key securely; for example, by using [GitHub encrypted secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets).
 
-It is possible to configure the action to use Datadog EU by defining the `site` parameter to `datadoghq.eu`. By default the upload is sent to Datadog US.
+
+By default, the upload is sent to Datadog US ('datadoghq.com'). To configure this Action to use Datadog EU, set the `site` parameter to `datadoghq.eu`.
 
 ## Usage
 
@@ -41,7 +42,6 @@ jobs:
 |name|type|requirement|description|
 |---|---|---|---|
 |`api_key`|string|required|Datadog API key. Use a secret storage to store this parameter.|
-|`site`|string|optional|Datadog site region. `datadoghq.com` by default, use `datadoghq.eu` for the EU.|
-|`dsym_paths`|list|required|List of dSYM files path to upload. Support paths to folder and/or to zip files.|
-|`dry_run`|boolean|optional|If `true`, it will run the command without the final step of upload. All other checks are performed.|
-
+|`site`|string|optional|Datadog site region. Defaults to `datadoghq.com`; use `datadoghq.eu` for the EU.|
+|`dsym_paths`|list|required|List of dSYM files path to upload. Supports paths to folders and/or to zip files.|
+|`dry_run`|Boolean|optional|If `true`, the command runs without the final upload step. All other checks are performed.|
