@@ -26,7 +26,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.6.0",
+    "@actions/core": "^1.8.2",
     "@datadog/datadog-ci": "^0.17.12"
   },
   "devDependencies": {
