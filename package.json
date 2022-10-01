@@ -30,7 +30,7 @@
     "@datadog/datadog-ci": "^0.17.12"
   },
   "devDependencies": {
-    "@types/node": "^17.0.30",
+    "@types/node": "^18.7.23",
     "@types/jest": "^27.4.0",
     "@typescript-eslint/parser": "^5.10.2",
     "@vercel/ncc": "^0.33.1",
