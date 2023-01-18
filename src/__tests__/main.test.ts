@@ -136,10 +136,8 @@ describe('Github Action', () => {
       expect(code).toBe(0)
       expect(output[1]).toContain('Starting upload with concurrency 20. ')
       expect(output[2]).toContain('Will look for dSYMs in src/__tests__/fixtures/test')
-      expect(output[3]).toContain(
-        'Uploading dSYM with BD8CE358-D5F3-358B-86DC-CBCF2148097B from src/__tests__/fixtures/test/test.dSYM'
-      )
-      expect(output[6]).toContain('Handled 1 dSYM with success in')
+      expect(output[3]).toContain('Will use temporary intermediate directory:')
+      expect(output[8]).toContain('Handled 1 dSYM with success')
     })
 
     test('succeed with zip file input', async () => {
@@ -153,8 +151,8 @@ describe('Github Action', () => {
       expect(code).toBe(0)
       expect(output[1]).toContain('Starting upload with concurrency 20. ')
       expect(output[2]).toContain('Will look for dSYMs in src/__tests__/fixtures/test.zip')
-      expect(output[3]).toContain('Uploading dSYM with BD8CE358-D5F3-358B-86DC-CBCF2148097B from /')
-      expect(output[6]).toContain('Handled 1 dSYM with success in')
+      expect(output[3]).toContain('Will use temporary intermediate directory:')
+      expect(output[8]).toContain('Handled 1 dSYM with success')
     })
   })
 })

@@ -27,16 +27,17 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "@datadog/datadog-ci": "^0.17.12"
+    "@datadog/datadog-ci": "^2.2.0"
   },
   "devDependencies": {
-    "@types/node": "^18.11.18",
     "@types/jest": "^27.4.0",
+    "@types/node": "^18.11.18",
     "@typescript-eslint/parser": "^5.48.2",
     "@vercel/ncc": "^0.36.0",
     "eslint": "^8.32.0",
     "eslint-plugin-github": "^4.3.2",
     "eslint-plugin-jest": "^26.1.5",
+    "eslint-plugin-prettier": "^4.2.1",
     "jest": "^27.4.7",
     "js-yaml": "^4.1.0",
     "prettier": "2.5.1",
