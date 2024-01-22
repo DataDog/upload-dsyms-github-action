@@ -31,11 +31,13 @@ export const main = async (): Promise<void> => {
     process.env.DATADOG_API_KEY = core.getInput('api_key', {required: true})
     process.env.DATADOG_SITE = core.getInput('site')
 
-    const context = {
+    const context: BaseContext = {
       stdin: process.stdin,
       stdout: process.stdout,
       stderr: process.stderr,
-    } as BaseContext
+      env: process.env,
+      colorDepth: 1,
+    }
 
     const paths = core.getMultilineInput('dsym_paths', {required: true})
     const dry_run = core.getBooleanInput('dry_run')
