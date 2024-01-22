@@ -141,8 +141,8 @@ describe('Github Action', () => {
       expect(output[1]).toContain('Starting upload with concurrency 20. ')
       expect(output[2]).toContain('Will look for dSYMs in src/__tests__/fixtures/test')
       expect(output[3]).toContain('Once dSYMs upload is successful files will be processed and ready to use within the next 5 minutes.')
-      expect(output[4]).toContain('Will use temporary intermediate directory:')
-      expect(output[9]).toContain('Handled 1 dSYM with success in')
+      expect(output[4]).toMatch(/Will use temporary intermediate directory: .+/)
+      expect(output[9]).toMatch(/Handled 1 dSYM with success in \d+\.\d+ seconds./)
     })
 
     test('succeed with zip file input', async () => {
@@ -158,8 +158,8 @@ describe('Github Action', () => {
       expect(output[1]).toContain('Starting upload with concurrency 20. ')
       expect(output[2]).toContain('Will look for dSYMs in src/__tests__/fixtures/test')
       expect(output[3]).toContain('Once dSYMs upload is successful files will be processed and ready to use within the next 5 minutes.')
-      expect(output[4]).toContain('Will use temporary intermediate directory:')
-      expect(output[9]).toContain('Handled 1 dSYM with success in')
+      expect(output[4]).toMatch(/Will use temporary intermediate directory: .+/)
+      expect(output[9]).toMatch(/Handled 1 dSYM with success in \d+\.\d+ seconds./)
     })
   })
 })
