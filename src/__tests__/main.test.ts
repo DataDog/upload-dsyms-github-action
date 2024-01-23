@@ -57,7 +57,7 @@ describe('Github Action', () => {
         return ''
       })
       jest.spyOn(core, 'getMultilineInput').mockImplementation(() => ['foo', 'bar'])
-      jest.spyOn(core, 'getBooleanInput').mockImplementation(() => dry_run)
+      jest.spyOn(core, 'getInput').mockImplementation(() => (dry_run ? 'true' : 'false'))
       const uploadMock = jest.spyOn(action, 'upload').mockImplementation(async () => Promise.resolve(0))
 
       // When
@@ -83,7 +83,7 @@ describe('Github Action', () => {
 
     test('dry run', async () => {
       // Given
-      jest.spyOn(core, 'getBooleanInput').mockImplementation(() => true)
+      jest.spyOn(core, 'getInput').mockImplementation(() => 'true')
       const runMock = jest.spyOn(action.cli, 'run').mockImplementation(async () => Promise.resolve(0))
 
       // When

@@ -78,7 +78,9 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             colorDepth: 1,
         };
         const paths = core.getMultilineInput('dsym_paths', { required: true });
-        const dry_run = core.getBooleanInput('dry_run');
+        // https://github.com/actions/toolkit/issues/844
+        // Can't use core.getBooleanInput() because it breaks when input is not set.
+        const dry_run = core.getInput('dry_run', { required: false }).toLowerCase() === 'true';
         for (const path of paths) {
             yield (0, exports.upload)(path, dry_run, context);
         }
