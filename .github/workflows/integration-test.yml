@@ -1,0 +1,23 @@
+name: Integration Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Upload dSYMs to Datadog
+        uses: DataDog/upload-dsyms-github-action@main
+        with:
+          api_key: ${{ secrets.DATADOG_API_KEY }}
+          site: datadoghq.com
+          dsym_paths: |
+            src/__tests__/fixtures/test.zip
