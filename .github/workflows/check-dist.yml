@@ -32,7 +32,9 @@ jobs:
         run: yarn install --immutable
 
       - name: Rebuild the dist/ directory
-        run: yarn build
+        run: |
+          yarn build
+          yarn package
 
       - name: Compare the expected and actual dist/ directories
         run: |
