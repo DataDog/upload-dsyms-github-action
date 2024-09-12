@@ -12,10 +12,11 @@ describe('Github Action', () => {
 
     test('with no api_key parameter', async () => {
       // Given
+      /* eslint-disable no-console */
       const setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation((message) => {
-        console.log(`Mocked setFailed called with message: ${message}`);
-      });
-
+        console.log(`Mocked setFailed called with message: ${message}`)
+      })
+      /* eslint-enable no-console */
 
       // When
       await action.main()
@@ -27,10 +28,11 @@ describe('Github Action', () => {
     test('with no dsym_paths parameter', async () => {
       // Given
       jest.spyOn(core, 'getInput').mockImplementation(() => 'foo')
+      /* eslint-disable no-console */
       const setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation((message) => {
-        console.log(`Mocked setFailed called with message: ${message}`);
-      });
-
+        console.log(`Mocked setFailed called with message: ${message}`)
+      })
+      /* eslint-enable no-console */
 
       // When
       await action.main()
