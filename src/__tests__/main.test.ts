@@ -12,7 +12,10 @@ describe('Github Action', () => {
 
     test('with no api_key parameter', async () => {
       // Given
-      const setFailedMock = jest.spyOn(core, 'setFailed')
+      const setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation((message) => {
+        console.log(`Mocked setFailed called with message: ${message}`);
+      });
+
 
       // When
       await action.main()
@@ -24,7 +27,10 @@ describe('Github Action', () => {
     test('with no dsym_paths parameter', async () => {
       // Given
       jest.spyOn(core, 'getInput').mockImplementation(() => 'foo')
-      const setFailedMock = jest.spyOn(core, 'setFailed')
+      const setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation((message) => {
+        console.log(`Mocked setFailed called with message: ${message}`);
+      });
+
 
       // When
       await action.main()
