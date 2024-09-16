@@ -12,7 +12,9 @@ describe('Github Action', () => {
 
     test('with no api_key parameter', async () => {
       // Given
-      const setFailedMock = jest.spyOn(core, 'setFailed')
+      const setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation(() => {
+        /* empty */
+      })
 
       // When
       await action.main()
@@ -24,7 +26,9 @@ describe('Github Action', () => {
     test('with no dsym_paths parameter', async () => {
       // Given
       jest.spyOn(core, 'getInput').mockImplementation(() => 'foo')
-      const setFailedMock = jest.spyOn(core, 'setFailed')
+      const setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation(() => {
+        /* empty */
+      })
 
       // When
       await action.main()
@@ -140,7 +144,9 @@ describe('Github Action', () => {
       expect(code).toBe(0)
       expect(output[1]).toContain('Starting upload with concurrency 20. ')
       expect(output[2]).toContain('Will look for dSYMs in src/__tests__/fixtures/test')
-      expect(output[3]).toContain('Once dSYMs upload is successful files will be processed and ready to use within the next 5 minutes.')
+      expect(output[3]).toContain(
+        'Once dSYMs upload is successful files will be processed and ready to use within the next 5 minutes.'
+      )
       expect(output[4]).toMatch(/Will use temporary intermediate directory: .+/)
       expect(output[9]).toMatch(/Handled 1 dSYM with success in \d+\.\d+ seconds./)
     })
@@ -157,7 +163,9 @@ describe('Github Action', () => {
       expect(output[1]).toContain('Starting upload with concurrency 20. ')
       expect(output[1]).toContain('Starting upload with concurrency 20. ')
       expect(output[2]).toContain('Will look for dSYMs in src/__tests__/fixtures/test')
-      expect(output[3]).toContain('Once dSYMs upload is successful files will be processed and ready to use within the next 5 minutes.')
+      expect(output[3]).toContain(
+        'Once dSYMs upload is successful files will be processed and ready to use within the next 5 minutes.'
+      )
       expect(output[4]).toMatch(/Will use temporary intermediate directory: .+/)
       expect(output[9]).toMatch(/Handled 1 dSYM with success in \d+\.\d+ seconds./)
     })
