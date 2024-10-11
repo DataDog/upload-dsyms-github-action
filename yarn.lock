@@ -979,10 +979,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@datadog/datadog-ci@^2.28.0":
-  version "2.42.0"
-  resolved "https://registry.yarnpkg.com/@datadog/datadog-ci/-/datadog-ci-2.42.0.tgz#9573192b94f47d2a259fee6cd4b4a0d914354829"
-  integrity sha512-xRLuafo0cmT5R/nGJWjQUwQkohWPuZILhajQj+2eNNsOwQKfPmyssA0h9yIZf/7KS6NTLWBy85U2pFxNcidpcw==
+"@datadog/datadog-ci@^2.43.0":
+  version "2.43.0"
+  resolved "https://registry.yarnpkg.com/@datadog/datadog-ci/-/datadog-ci-2.43.0.tgz#fdcd2b6a3b6ccdae2bac2498f58e598ba9450b86"
+  integrity sha512-nk/X0+kz/7EBIr6M9E2NXOSvZ+x1fAx3SYxhfCGEgzcdbGlO3Xt3anwVhaivdkI/yKWN9EUyE3s3o/RKUBPaqw==
   dependencies:
     "@aws-sdk/client-cloudwatch-logs" "^3.624.0"
     "@aws-sdk/client-iam" "^3.624.0"
@@ -996,7 +996,6 @@
     "@smithy/property-provider" "^2.0.12"
     "@smithy/util-retry" "^2.0.4"
     "@types/datadog-metrics" "0.6.1"
-    "@types/retry" "0.12.0"
     ajv "^8.12.0"
     ajv-formats "^2.1.1"
     async-retry "1.3.1"
@@ -2117,11 +2116,6 @@
     "@types/tough-cookie" "*"
     form-data "^2.5.0"
 
-"@types/retry@0.12.0":
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/@types/retry/-/retry-0.12.0.tgz#2b35eccfcee7d38cd72ad99232fbd58bffb3c84d"
-  integrity sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==
-
 "@types/semver@^7.3.12":
   version "7.5.8"
   resolved "https://registry.yarnpkg.com/@types/semver/-/semver-7.5.8.tgz#8268a8c57a3e4abd25c165ecd36237db7948a55e"
@@ -2319,10 +2313,10 @@
   resolved "https://registry.yarnpkg.com/@ungap/structured-clone/-/structured-clone-1.2.0.tgz#756641adb587851b5ccb3e095daf27ae581c8406"
   integrity sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==
 
-"@vercel/ncc@^0.38.1":
-  version "0.38.1"
-  resolved "https://registry.yarnpkg.com/@vercel/ncc/-/ncc-0.38.1.tgz#13f08738111e1d9e8a22fd6141f3590e54d9a60e"
-  integrity sha512-IBBb+iI2NLu4VQn3Vwldyi2QwaXt5+hTyh58ggAMoCGE6DJmPvwL3KPBWcJl1m9LYPChBLE980Jw+CS4Wokqxw==
+"@vercel/ncc@^0.38.2":
+  version "0.38.2"
+  resolved "https://registry.yarnpkg.com/@vercel/ncc/-/ncc-0.38.2.tgz#d35c3a74c671699ccf316f74bf0ecab6b60e312b"
+  integrity sha512-3yel3jaxUg9pHBv4+KeC9qlbdZPug+UMtUOlhvpDYCMSgcNSrS2Hv1LoqMsOV7hf2lYscx+BESfJOIla1WsmMQ==
 
 abab@^2.0.3, abab@^2.0.5:
   version "2.0.6"
@@ -3592,12 +3586,13 @@ eslint-plugin-no-only-tests@^3.0.0:
   resolved "https://registry.yarnpkg.com/eslint-plugin-no-only-tests/-/eslint-plugin-no-only-tests-3.3.0.tgz#d9d42ccd4b5d099b4872fb5046cf95441188cfb5"
   integrity sha512-brcKcxGnISN2CcVhXJ/kEQlNa0MEfGRtwKtWA16SkqXHKitaKIMrfemJKLKX1YqDU5C/5JY3PvZXd5jEW04e0Q==
 
-eslint-plugin-prettier@^4.2.1:
-  version "4.2.1"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-prettier/-/eslint-plugin-prettier-4.2.1.tgz#651cbb88b1dab98bfd42f017a12fa6b2d993f94b"
-  integrity sha512-f/0rXLXUt0oFYs8ra4w49wYZBG5GKZpAYsJSm6rnYL5uVDjd+zowwMwVZHnAjf4edNrKpCDYfXDgmRE/Ak7QyQ==
+eslint-plugin-prettier@5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-prettier/-/eslint-plugin-prettier-5.0.0.tgz#6887780ed95f7708340ec79acfdf60c35b9be57a"
+  integrity sha512-AgaZCVuYDXHUGxj/ZGu1u8H8CYgDY3iG6w5kUFw4AzMVXzB7VvbKgYR4nATIN+OvUrghMbiDLeimVjVY5ilq3w==
   dependencies:
     prettier-linter-helpers "^1.0.0"
+    synckit "^0.8.5"
 
 eslint-plugin-prettier@^5.0.0:
   version "5.2.1"
@@ -5782,7 +5777,7 @@ prettier-linter-helpers@^1.0.0:
   dependencies:
     fast-diff "^1.1.2"
 
-prettier@3.3.3, prettier@^3.0.0:
+prettier@^3.0.0, prettier@^3.3.3:
   version "3.3.3"
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.3.3.tgz#30c54fe0be0d8d12e6ae61dbb10109ea00d53105"
   integrity sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==
@@ -6453,6 +6448,14 @@ symbol-tree@^3.2.4:
   version "3.2.4"
   resolved "https://registry.yarnpkg.com/symbol-tree/-/symbol-tree-3.2.4.tgz#430637d248ba77e078883951fb9aa0eed7c63fa2"
   integrity sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==
+
+synckit@^0.8.5:
+  version "0.8.8"
+  resolved "https://registry.yarnpkg.com/synckit/-/synckit-0.8.8.tgz#fe7fe446518e3d3d49f5e429f443cf08b6edfcd7"
+  integrity sha512-HwOKAP7Wc5aRGYdKH+dw0PRRpbO841v2DENBtjnR5HFWoiNByAl7vrx3p0G/rCyYXQsrxqtX48TImFtPcIHSpQ==
+  dependencies:
+    "@pkgr/core" "^0.1.0"
+    tslib "^2.6.2"
 
 synckit@^0.9.1:
   version "0.9.1"
