@@ -979,10 +979,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@datadog/datadog-ci@^2.28.0":
-  version "2.42.0"
-  resolved "https://registry.yarnpkg.com/@datadog/datadog-ci/-/datadog-ci-2.42.0.tgz#9573192b94f47d2a259fee6cd4b4a0d914354829"
-  integrity sha512-xRLuafo0cmT5R/nGJWjQUwQkohWPuZILhajQj+2eNNsOwQKfPmyssA0h9yIZf/7KS6NTLWBy85U2pFxNcidpcw==
+"@datadog/datadog-ci@^2.43.0":
+  version "2.43.0"
+  resolved "https://registry.yarnpkg.com/@datadog/datadog-ci/-/datadog-ci-2.43.0.tgz#fdcd2b6a3b6ccdae2bac2498f58e598ba9450b86"
+  integrity sha512-nk/X0+kz/7EBIr6M9E2NXOSvZ+x1fAx3SYxhfCGEgzcdbGlO3Xt3anwVhaivdkI/yKWN9EUyE3s3o/RKUBPaqw==
   dependencies:
     "@aws-sdk/client-cloudwatch-logs" "^3.624.0"
     "@aws-sdk/client-iam" "^3.624.0"
@@ -996,7 +996,6 @@
     "@smithy/property-provider" "^2.0.12"
     "@smithy/util-retry" "^2.0.4"
     "@types/datadog-metrics" "0.6.1"
-    "@types/retry" "0.12.0"
     ajv "^8.12.0"
     ajv-formats "^2.1.1"
     async-retry "1.3.1"
@@ -2116,11 +2115,6 @@
     "@types/node" "*"
     "@types/tough-cookie" "*"
     form-data "^2.5.0"
-
-"@types/retry@0.12.0":
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/@types/retry/-/retry-0.12.0.tgz#2b35eccfcee7d38cd72ad99232fbd58bffb3c84d"
-  integrity sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==
 
 "@types/semver@^7.3.12":
   version "7.5.8"
