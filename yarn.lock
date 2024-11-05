@@ -979,10 +979,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@datadog/datadog-ci@^2.43.0":
-  version "2.43.0"
-  resolved "https://registry.yarnpkg.com/@datadog/datadog-ci/-/datadog-ci-2.43.0.tgz#fdcd2b6a3b6ccdae2bac2498f58e598ba9450b86"
-  integrity sha512-nk/X0+kz/7EBIr6M9E2NXOSvZ+x1fAx3SYxhfCGEgzcdbGlO3Xt3anwVhaivdkI/yKWN9EUyE3s3o/RKUBPaqw==
+"@datadog/datadog-ci@^2.44.0":
+  version "2.44.0"
+  resolved "https://registry.yarnpkg.com/@datadog/datadog-ci/-/datadog-ci-2.44.0.tgz#59a4e254d4f3f353421579f895df01fcfe0e24a5"
+  integrity sha512-XYN2evNTACLoGP2jBXFYVwpbC1+mwgTy8y5NAHfUkynev4w1fnOyTL/sigDOBRiPF8VnwCDW5I2wZJa4VEMKmA==
   dependencies:
     "@aws-sdk/client-cloudwatch-logs" "^3.624.0"
     "@aws-sdk/client-iam" "^3.624.0"
