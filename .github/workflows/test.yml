@@ -10,13 +10,14 @@ jobs:
   build: # make sure build/ci work properly
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - run: yarn install
       - run: yarn all
+      
   test: # make sure the action works on a clean machine without building
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: ./
         with:
           api_key: "xyz" # ${{ secrets.DATADOG_API_KEY }}
