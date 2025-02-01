@@ -991,10 +991,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@datadog/datadog-ci@2.45":
-  version "2.45.1"
-  resolved "https://registry.yarnpkg.com/@datadog/datadog-ci/-/datadog-ci-2.45.1.tgz#f49f699499ff776472811f0c5eaeb467c4589d44"
-  integrity sha512-na4c4UuhT2jGFTOh+/uUVGR0CVj7c2B6Q7pRp9AMxb6NF2o3McjnSFJzmVc7YFdZwr+eHXeKXKf6bEYw/PjNWw==
+"@datadog/datadog-ci@2.48":
+  version "2.48.0"
+  resolved "https://registry.yarnpkg.com/@datadog/datadog-ci/-/datadog-ci-2.48.0.tgz#89a7c25a68b7f67e699b3eea3edda2d34c5ecb82"
+  integrity sha512-Xseeb1Fu0CBl2SpbYzTiqok9bs5bKSY9ZAGDuDcWTjSI3jpCuDt4BiIxE/HOMzV4t+S6KKjCABhquahXo/u0TA==
   dependencies:
     "@aws-sdk/client-cloudwatch-logs" "^3.624.0"
     "@aws-sdk/client-iam" "^3.624.0"
@@ -1028,6 +1028,7 @@
     js-yaml "3.13.1"
     jszip "^3.10.1"
     ora "5.4.1"
+    packageurl-js "^2.0.1"
     proxy-agent "^6.4.0"
     rimraf "^3.0.2"
     semver "^7.5.3"
@@ -5748,6 +5749,11 @@ pac-resolver@^7.0.1:
   dependencies:
     degenerator "^5.0.0"
     netmask "^2.0.2"
+
+packageurl-js@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/packageurl-js/-/packageurl-js-2.0.1.tgz#a8fa43a64971b5dd0dca5fb904b950a6cc317a6f"
+  integrity sha512-N5ixXjzTy4QDQH0Q9YFjqIWd6zH6936Djpl2m9QNFmDv5Fum8q8BjkpAcHNMzOFE0IwQrFhJWex3AN6kS0OSwg==
 
 pako@~1.0.2:
   version "1.0.11"
