@@ -28,7 +28,8 @@
   "dependencies": {
     "@actions/core": "1.11.1",
     "@datadog/datadog-ci": "2.45",
-    "@typescript-eslint/eslint-plugin": "5"
+    "@typescript-eslint/eslint-plugin": "5",
+    "axios": "^1.8.4"
   },
   "devDependencies": {
     "@types/jest": "^27.4.0",
