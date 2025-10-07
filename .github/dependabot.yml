@@ -1,11 +1,17 @@
 version: 2
-updates:
-  - package-ecosystem: github-actions
-    directory: /
-    schedule:
-      interval: monthly
 
-  - package-ecosystem: npm
-    directory: /
+multi-ecosystem-groups:
+  repo-dependencies:
     schedule:
-      interval: monthly
+      interval: "monthly"
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    patterns: ["*"]
+    multi-ecosystem-group: "repo-dependencies"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    patterns: ["*"]
+    multi-ecosystem-group: "repo-dependencies"
