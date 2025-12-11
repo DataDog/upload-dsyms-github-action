@@ -31,20 +31,20 @@
     "axios": "^1.12.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/eslintrc": "^3.3.3",
     "@types/jest": "30.0.0",
-    "@types/node": "24.9.1",
+    "@types/node": "24.10.1",
     "@vercel/ncc": "^0.38.4",
-    "eslint": "9.38.0",
+    "eslint": "9.39.1",
     "eslint-plugin-github": "^6.0.0",
-    "eslint-plugin-jest": "^29.0.1",
+    "eslint-plugin-jest": "^29.2.1",
     "eslint-plugin-prettier": "5.5.4",
-    "globals": "^16.4.0",
+    "globals": "^16.5.0",
     "jest": "30.2.0",
     "js-yaml": "^4.1.0",
-    "prettier": "3.6.2",
+    "prettier": "3.7.3",
     "ts-jest": "29.4.5",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.46.2"
+    "typescript-eslint": "8.48.0"
   }
 }
