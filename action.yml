@@ -19,5 +19,5 @@ inputs:
     required: false
     description: 'If true, it will run the command without the final step of upload. All other checks are performed.'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
