@@ -1,11 +1,11 @@
 import {platform} from 'os'
 import * as core from '@actions/core'
 import {BaseContext, Cli} from 'clipanion'
-import {UploadCommand} from '@datadog/datadog-ci/dist/commands/dsyms/upload'
+import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
 
-// Create a local clipanion cli and register the dsyms UploadCommand.
+// Create a local clipanion cli and register the dsyms DsymsUploadCommand.
 export const cli = new Cli()
-cli.register(UploadCommand)
+cli.register(DsymsUploadCommand)
 
 /**
  * Uploads Dsym files at the given path.
