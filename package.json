@@ -47,5 +47,8 @@
     "ts-jest": "29.4.6",
     "typescript": "5.9.3",
     "typescript-eslint": "8.57.0"
+  },
+  "resolutions": {
+    "simple-git": "3.33.0"
   }
 }
