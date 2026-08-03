@@ -29,7 +29,7 @@
     "@actions/core": "2.0.3",
     "@datadog/datadog-ci": "5.9.0",
     "@datadog/datadog-ci-base": "5.9.0",
-    "axios": "^1.16.0"
+    "axios": "^1.19.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
@@ -48,10 +48,10 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.57.0"
   },
-  "resolutions": {
+  "overrides": {
     "simple-git": ">=3.25.0"
   },
-  "overrides": {
+  "resolutions": {
     "simple-git": ">=3.25.0"
   }
 }
