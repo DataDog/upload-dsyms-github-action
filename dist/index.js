@@ -4174,7 +4174,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.newApiKeyValidator = void 0;
-const axios_1 = __nccwpck_require__(7269);
+const axios_1 = __nccwpck_require__(1677);
 const chalk_1 = __importDefault(__nccwpck_require__(6197));
 const errors_1 = __nccwpck_require__(1448);
 const newApiKeyValidator = (params) => new ApiKeyValidatorImplem(params.apiKey, params.datadogSite, params.metricsLogger);
@@ -4703,7 +4703,7 @@ exports.isFile = exports.getGitHubEventPayload = exports.execute = exports.maskS
 const child_process_1 = __nccwpck_require__(5317);
 const fs_1 = __nccwpck_require__(9896);
 const util_1 = __nccwpck_require__(9023);
-const axios_1 = __nccwpck_require__(7269);
+const axios_1 = __nccwpck_require__(1677);
 const clipanion_1 = __nccwpck_require__(9852);
 const deep_extend_1 = __importDefault(__nccwpck_require__(2828));
 const proxy_agent_1 = __nccwpck_require__(5273);
@@ -14128,13 +14128,13 @@ const path_1 = __nccwpck_require__(6928);
 const tls_1 = __nccwpck_require__(4756);
 const util_1 = __nccwpck_require__(9023);
 const FtpContext_1 = __nccwpck_require__(6081);
+const netUtils_1 = __nccwpck_require__(6156);
+const parseControlResponse_1 = __nccwpck_require__(5931);
 const parseList_1 = __nccwpck_require__(1641);
+const parseListMLSD_1 = __nccwpck_require__(5287);
 const ProgressTracker_1 = __nccwpck_require__(5475);
 const StringWriter_1 = __nccwpck_require__(5494);
-const parseListMLSD_1 = __nccwpck_require__(5287);
-const netUtils_1 = __nccwpck_require__(6156);
 const transfer_1 = __nccwpck_require__(5115);
-const parseControlResponse_1 = __nccwpck_require__(5931);
 // Use promisify to keep the library compatible with Node 8.
 const fsReadDir = (0, util_1.promisify)(fs_1.readdir);
 const fsMkDir = (0, util_1.promisify)(fs_1.mkdir);
@@ -14142,6 +14142,10 @@ const fsStat = (0, util_1.promisify)(fs_1.stat);
 const fsOpen = (0, util_1.promisify)(fs_1.open);
 const fsClose = (0, util_1.promisify)(fs_1.close);
 const fsUnlink = (0, util_1.promisify)(fs_1.unlink);
+const defaultClientOptions = {
+    allowSeparateTransferHost: true,
+    maxListingBytes: 40 * 1024 * 1024
+};
 const LIST_COMMANDS_DEFAULT = () => ["LIST -a", "LIST"];
 const LIST_COMMANDS_MLSD = () => ["MLSD", "LIST -a", "LIST"];
 /**
@@ -14153,10 +14157,15 @@ class Client {
      *
      * @param timeout  Timeout in milliseconds, use 0 for no timeout. Optional, default is 30 seconds.
      */
-    constructor(timeout = 30000) {
+    constructor(timeout = 30000, userOptions = defaultClientOptions) {
         this.availableListCommands = LIST_COMMANDS_DEFAULT();
+        const options = { ...defaultClientOptions, ...userOptions };
         this.ftp = new FtpContext_1.FTPContext(timeout);
-        this.prepareTransfer = this._enterFirstCompatibleMode([transfer_1.enterPassiveModeIPv6, transfer_1.enterPassiveModeIPv4]);
+        this.prepareTransfer = this._enterFirstCompatibleMode([
+            transfer_1.enterPassiveModeIPv6,
+            options.allowSeparateTransferHost ? transfer_1.enterPassiveModeIPv4 : transfer_1.enterPassiveModeIPv4_forceControlHostIP
+        ]);
+        this.options = options;
         this.parseList = parseList_1.parseList;
         this._progressTracker = new ProgressTracker_1.ProgressTracker();
     }
@@ -14630,7 +14639,7 @@ class Client {
      * @protected
      */
     async _requestListWithCommand(command) {
-        const buffer = new StringWriter_1.StringWriter();
+        const buffer = new StringWriter_1.StringWriter(this.options.maxListingBytes);
         await (0, transfer_1.downloadTo)(buffer, {
             ftp: this.ftp,
             tracker: this._progressTracker,
@@ -14739,6 +14748,12 @@ class Client {
     async _downloadFromWorkingDir(localDirPath) {
         await ensureLocalDirectory(localDirPath);
         for (const file of await this.list()) {
+            const hasInvalidName = !file.name || (0, path_1.basename)(file.name) !== file.name;
+            if (hasInvalidName) {
+                const safeName = JSON.stringify(file.name);
+                this.ftp.log(`Invalid filename from server listing, will skip file. (${safeName})`);
+                continue;
+            }
             const localPath = (0, path_1.join)(localDirPath, file.name);
             if (file.isDirectory) {
                 await this.cd(file.name);
@@ -14819,7 +14834,7 @@ class Client {
                 try {
                     const res = await strategy(ftp);
                     ftp.log("Optimal transfer strategy found.");
-                    this.prepareTransfer = strategy; // eslint-disable-line require-atomic-updates
+                    this.prepareTransfer = strategy;
                     return res;
                 }
                 catch (err) {
@@ -14877,7 +14892,7 @@ async function ensureLocalDirectory(path) {
     try {
         await fsStat(path);
     }
-    catch (err) {
+    catch (_a) {
         await fsMkDir(path, { recursive: true });
     }
 }
@@ -14885,7 +14900,7 @@ async function ignoreError(func) {
     try {
         return await func();
     }
-    catch (err) {
+    catch (_a) {
         // Ignore
         return undefined;
     }
@@ -15017,6 +15032,8 @@ exports.FTPError = FTPError;
 function doNothing() {
     /** Do nothing */
 }
+// Limit the accepted size of the control response.
+const maxControlResponseLength = 2 ** 16;
 /**
  * FTPContext holds the control and data sockets of an FTP connection and provides a
  * simplified way to interact with an FTP server, handle responses, errors and timeouts.
@@ -15175,6 +15192,10 @@ class FTPContext {
      * Send an FTP command without waiting for or handling the result.
      */
     send(command) {
+        // Reject control character injection attempts.
+        if (/[\r\n\0]/.test(command)) {
+            throw new Error(`Invalid command: Contains control characters. (${command})`);
+        }
         const containsPassword = command.startsWith("PASS");
         const message = containsPassword ? "> PASS ###" : `> ${command}`;
         this.log(message);
@@ -15271,7 +15292,11 @@ class FTPContext {
      */
     _onControlSocketData(chunk) {
         this.log(`< ${chunk}`);
-        // This chunk might complete an earlier partial response.
+        // This chunk might complete an earlier partial response. Protect against unbounded response attack.
+        if (this._partialResponse.length + chunk.length > maxControlResponseLength) {
+            this.closeWithError(new Error("FTP control response exceeded maximum allowed size"));
+            return;
+        }
         const completeResponse = this._partialResponse + chunk;
         const parsed = (0, parseControlResponse_1.parseControlResponse)(completeResponse);
         // Remember any incomplete remainder.
@@ -15466,21 +15491,27 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.StringWriter = void 0;
 const stream_1 = __nccwpck_require__(2203);
 class StringWriter extends stream_1.Writable {
-    constructor() {
-        super(...arguments);
-        this.buf = Buffer.alloc(0);
+    constructor(maxByteLength = 1 * 1024 * 1024) {
+        super();
+        this.maxByteLength = maxByteLength;
+        this.byteLength = 0;
+        this.bufs = [];
     }
     _write(chunk, _, callback) {
-        if (chunk instanceof Buffer) {
-            this.buf = Buffer.concat([this.buf, chunk]);
-            callback(null);
+        if (!(chunk instanceof Buffer)) {
+            callback(new Error("StringWriter: expects chunks of type 'Buffer'."));
+            return;
         }
-        else {
-            callback(new Error("StringWriter expects chunks of type 'Buffer'."));
+        if (this.byteLength + chunk.byteLength > this.maxByteLength) {
+            callback(new Error(`StringWriter: Maximum bytes exceeded, maxByteLength=${this.maxByteLength}.`));
+            return;
         }
+        this.byteLength += chunk.byteLength;
+        this.bufs.push(chunk);
+        callback(null);
     }
     getText(encoding) {
-        return this.buf.toString(encoding);
+        return Buffer.concat(this.bufs).toString(encoding);
     }
 }
 exports.StringWriter = StringWriter;
@@ -15530,7 +15561,10 @@ Object.defineProperty(exports, "enterPassiveModeIPv6", ({ enumerable: true, get:
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ipIsPrivateV4Address = exports.upgradeSocket = exports.describeAddress = exports.describeTLS = void 0;
+exports.describeTLS = describeTLS;
+exports.describeAddress = describeAddress;
+exports.upgradeSocket = upgradeSocket;
+exports.ipIsPrivateV4Address = ipIsPrivateV4Address;
 const tls_1 = __nccwpck_require__(4756);
 /**
  * Returns a string describing the encryption on a given socket instance.
@@ -15542,7 +15576,6 @@ function describeTLS(socket) {
     }
     return "No encryption";
 }
-exports.describeTLS = describeTLS;
 /**
  * Returns a string describing the remote address of a socket.
  */
@@ -15552,7 +15585,6 @@ function describeAddress(socket) {
     }
     return `${socket.remoteAddress}:${socket.remotePort}`;
 }
-exports.describeAddress = describeAddress;
 /**
  * Upgrade a socket connection with TLS.
  */
@@ -15576,7 +15608,6 @@ function upgradeSocket(socket, options) {
         });
     });
 }
-exports.upgradeSocket = upgradeSocket;
 /**
  * Returns true if an IP is a private address according to https://tools.ietf.org/html/rfc1918#section-3.
  * This will handle IPv4-mapped IPv6 addresses correctly but return false for all other IPv6 addresses.
@@ -15594,7 +15625,6 @@ function ipIsPrivateV4Address(ip = "") {
         || (octets[0] === 192 && octets[1] === 168) // 192.168.0.0 - 192.168.255.255
         || ip === "127.0.0.1";
 }
-exports.ipIsPrivateV4Address = ipIsPrivateV4Address;
 
 
 /***/ }),
@@ -15605,7 +15635,11 @@ exports.ipIsPrivateV4Address = ipIsPrivateV4Address;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.positiveIntermediate = exports.positiveCompletion = exports.isMultiline = exports.isSingleLine = exports.parseControlResponse = void 0;
+exports.parseControlResponse = parseControlResponse;
+exports.isSingleLine = isSingleLine;
+exports.isMultiline = isMultiline;
+exports.positiveCompletion = positiveCompletion;
+exports.positiveIntermediate = positiveIntermediate;
 const LF = "\n";
 /**
  * Parse an FTP control response as a collection of messages. A message is a complete
@@ -15644,29 +15678,24 @@ function parseControlResponse(text) {
     const rest = tokenRegex ? lines.slice(startAt).join(LF) + LF : "";
     return { messages, rest };
 }
-exports.parseControlResponse = parseControlResponse;
 function isSingleLine(line) {
     return /^\d\d\d(?:$| )/.test(line);
 }
-exports.isSingleLine = isSingleLine;
 function isMultiline(line) {
     return /^\d\d\d-/.test(line);
 }
-exports.isMultiline = isMultiline;
 /**
  * Return true if an FTP return code describes a positive completion.
  */
 function positiveCompletion(code) {
     return code >= 200 && code < 300;
 }
-exports.positiveCompletion = positiveCompletion;
 /**
  * Return true if an FTP return code describes a positive intermediate response.
  */
 function positiveIntermediate(code) {
     return code >= 300 && code < 400;
 }
-exports.positiveIntermediate = positiveIntermediate;
 function isNotBlank(str) {
     return str.trim() !== "";
 }
@@ -15695,15 +15724,25 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.parseList = void 0;
+exports.parseList = parseList;
 const dosParser = __importStar(__nccwpck_require__(4439));
 const unixParser = __importStar(__nccwpck_require__(8003));
 const mlsdParser = __importStar(__nccwpck_require__(5287));
@@ -15747,7 +15786,6 @@ function parseList(rawList) {
         .filter((info) => info !== undefined);
     return parser.transformList(files);
 }
-exports.parseList = parseList;
 
 
 /***/ }),
@@ -15758,7 +15796,9 @@ exports.parseList = parseList;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.transformList = exports.parseLine = exports.testLine = void 0;
+exports.testLine = testLine;
+exports.parseLine = parseLine;
+exports.transformList = transformList;
 const FileInfo_1 = __nccwpck_require__(7666);
 /**
  * This parser is based on the FTP client library source code in Apache Commons Net provided
@@ -15778,7 +15818,6 @@ const RE_LINE = new RegExp("(\\S+)\\s+(\\S+)\\s+" // MM-dd-yy whitespace hh:mma|
 function testLine(line) {
     return /^\d{2}/.test(line) && RE_LINE.test(line);
 }
-exports.testLine = testLine;
 /**
  * Parse a single line of a DOS-style directory listing.
  */
@@ -15804,11 +15843,9 @@ function parseLine(line) {
     file.rawModifiedAt = groups[1] + " " + groups[2];
     return file;
 }
-exports.parseLine = parseLine;
 function transformList(files) {
     return files;
 }
-exports.transformList = transformList;
 
 
 /***/ }),
@@ -15819,7 +15856,10 @@ exports.transformList = transformList;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.parseMLSxDate = exports.transformList = exports.parseLine = exports.testLine = void 0;
+exports.testLine = testLine;
+exports.parseLine = parseLine;
+exports.transformList = transformList;
+exports.parseMLSxDate = parseMLSxDate;
 const FileInfo_1 = __nccwpck_require__(7666);
 function parseSize(value, info) {
     info.size = parseInt(value, 10);
@@ -15932,7 +15972,6 @@ function splitStringOnce(str, delimiter) {
 function testLine(line) {
     return /^\S+=\S+;/.test(line) || line.startsWith(" ");
 }
-exports.testLine = testLine;
 /**
  * Parse single line as MLSD listing, see specification at https://tools.ietf.org/html/rfc3659#section-7.
  */
@@ -15959,7 +15998,6 @@ function parseLine(line) {
     }
     return info;
 }
-exports.parseLine = parseLine;
 function transformList(files) {
     // Create a map of all files that are not symbolic links by their unique ID
     const nonLinksByID = new Map();
@@ -15987,7 +16025,6 @@ function transformList(files) {
     }
     return resolvedFiles;
 }
-exports.transformList = transformList;
 /**
  * Parse date as specified in https://tools.ietf.org/html/rfc3659#section-2.3.
  *
@@ -16004,7 +16041,6 @@ function parseMLSxDate(fact) {
     +fact.slice(15, 18) // Milliseconds
     ));
 }
-exports.parseMLSxDate = parseMLSxDate;
 
 
 /***/ }),
@@ -16015,7 +16051,9 @@ exports.parseMLSxDate = parseMLSxDate;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.transformList = exports.parseLine = exports.testLine = void 0;
+exports.testLine = testLine;
+exports.parseLine = parseLine;
+exports.transformList = transformList;
 const FileInfo_1 = __nccwpck_require__(7666);
 const JA_MONTH = "\u6708";
 const JA_DAY = "\u65e5";
@@ -16092,7 +16130,6 @@ const RE_LINE = new RegExp("([bcdelfmpSs-])" // file type
 function testLine(line) {
     return RE_LINE.test(line);
 }
-exports.testLine = testLine;
 /**
  * Parse a single line of a Unix-style directory listing.
  */
@@ -16150,11 +16187,9 @@ function parseLine(line) {
     }
     return file;
 }
-exports.parseLine = parseLine;
 function transformList(files) {
     return files;
 }
-exports.transformList = transformList;
 function parseMode(r, w, x) {
     let value = 0;
     if (r !== "-") {
@@ -16179,7 +16214,14 @@ function parseMode(r, w, x) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.downloadTo = exports.uploadFrom = exports.connectForPassiveTransfer = exports.parsePasvResponse = exports.enterPassiveModeIPv4 = exports.parseEpsvResponse = exports.enterPassiveModeIPv6 = void 0;
+exports.enterPassiveModeIPv6 = enterPassiveModeIPv6;
+exports.parseEpsvResponse = parseEpsvResponse;
+exports.enterPassiveModeIPv4 = enterPassiveModeIPv4;
+exports.enterPassiveModeIPv4_forceControlHostIP = enterPassiveModeIPv4_forceControlHostIP;
+exports.parsePasvResponse = parsePasvResponse;
+exports.connectForPassiveTransfer = connectForPassiveTransfer;
+exports.uploadFrom = uploadFrom;
+exports.downloadTo = downloadTo;
 const netUtils_1 = __nccwpck_require__(6156);
 const stream_1 = __nccwpck_require__(2203);
 const tls_1 = __nccwpck_require__(4756);
@@ -16200,7 +16242,6 @@ async function enterPassiveModeIPv6(ftp) {
     await connectForPassiveTransfer(controlHost, port, ftp);
     return res;
 }
-exports.enterPassiveModeIPv6 = enterPassiveModeIPv6;
 /**
  * Parse an EPSV response. Returns only the port as in EPSV the host of the control connection is used.
  */
@@ -16217,7 +16258,6 @@ function parseEpsvResponse(message) {
     }
     return port;
 }
-exports.parseEpsvResponse = parseEpsvResponse;
 /**
  * Prepare a data socket using passive mode over IPv4.
  */
@@ -16238,7 +16278,24 @@ async function enterPassiveModeIPv4(ftp) {
     await connectForPassiveTransfer(target.host, target.port, ftp);
     return res;
 }
-exports.enterPassiveModeIPv4 = enterPassiveModeIPv4;
+/**
+ * Prepare a data socket using passive mode over IPv4. Ignore the IP provided by the PASV response,
+ * and use the control host IP. This is the same behaviour as with the more modern variant EPSV. Use
+ * this to fix issues around NAT or provide more security by preventing FTP bounce attacks.
+ */
+async function enterPassiveModeIPv4_forceControlHostIP(ftp) {
+    const res = await ftp.request("PASV");
+    const target = parsePasvResponse(res.message);
+    if (!target) {
+        throw new Error("Can't parse PASV response: " + res.message);
+    }
+    const controlHost = ftp.socket.remoteAddress;
+    if (controlHost === undefined) {
+        throw new Error("Control socket is disconnected, can't get remote address.");
+    }
+    await connectForPassiveTransfer(controlHost, target.port, ftp);
+    return res;
+}
 /**
  * Parse a PASV response.
  */
@@ -16253,7 +16310,6 @@ function parsePasvResponse(message) {
         port: (parseInt(groups[2], 10) & 255) * 256 + (parseInt(groups[3], 10) & 255)
     };
 }
-exports.parsePasvResponse = parsePasvResponse;
 function connectForPassiveTransfer(host, port, ftp) {
     return new Promise((resolve, reject) => {
         let socket = ftp._newSocket();
@@ -16295,7 +16351,6 @@ function connectForPassiveTransfer(host, port, ftp) {
         });
     });
 }
-exports.connectForPassiveTransfer = connectForPassiveTransfer;
 /**
  * Helps resolving/rejecting transfers.
  *
@@ -16420,7 +16475,6 @@ function uploadFrom(source, config) {
         // Ignore all other positive preliminary response codes (< 200)
     });
 }
-exports.uploadFrom = uploadFrom;
 function downloadTo(destination, config) {
     if (!config.ftp.dataSocket) {
         throw new Error("Download will be initiated but no data connection is available.");
@@ -16459,7 +16513,6 @@ function downloadTo(destination, config) {
         // Ignore all other positive preliminary response codes (< 200)
     });
 }
-exports.downloadTo = downloadTo;
 /**
  * Calls a function immediately if a condition is met or subscribes to an event and calls
  * it once the event is emitted.
@@ -47096,7 +47149,7 @@ var JSON = module.exports;
   var undefined;
 
   /** Used as the semantic version number. */
-  var VERSION = '4.17.21';
+  var VERSION = '4.18.1';
 
   /** Used as the size to enable large array optimizations. */
   var LARGE_ARRAY_SIZE = 200;
@@ -47104,7 +47157,8 @@ var JSON = module.exports;
   /** Error message constants. */
   var CORE_ERROR_TEXT = 'Unsupported core-js use. Try https://npms.io/search?q=ponyfill.',
       FUNC_ERROR_TEXT = 'Expected a function',
-      INVALID_TEMPL_VAR_ERROR_TEXT = 'Invalid `variable` option passed into `_.template`';
+      INVALID_TEMPL_VAR_ERROR_TEXT = 'Invalid `variable` option passed into `_.template`',
+      INVALID_TEMPL_IMPORTS_ERROR_TEXT = 'Invalid `imports` option passed into `_.template`';
 
   /** Used to stand-in for `undefined` hash values. */
   var HASH_UNDEFINED = '__lodash_hash_undefined__';
@@ -48836,6 +48890,10 @@ var JSON = module.exports;
      * embedded Ruby (ERB) as well as ES2015 template strings. Change the
      * following template settings to use alternative delimiters.
      *
+     * **Security:** See
+     * [threat model](https://github.com/lodash/lodash/blob/main/threat-model.md)
+     * — `_.template` is insecure and will be removed in v5.
+     *
      * @static
      * @memberOf _
      * @type {Object}
@@ -49384,7 +49442,7 @@ var JSON = module.exports;
      * @name has
      * @memberOf SetCache
      * @param {*} value The value to search for.
-     * @returns {number} Returns `true` if `value` is found, else `false`.
+     * @returns {boolean} Returns `true` if `value` is found, else `false`.
      */
     function setCacheHas(value) {
       return this.__data__.has(value);
@@ -50850,7 +50908,7 @@ var JSON = module.exports;
           if (isArray(iteratee)) {
             return function(value) {
               return baseGet(value, iteratee.length === 1 ? iteratee[0] : iteratee);
-            }
+            };
           }
           return iteratee;
         });
@@ -51454,8 +51512,34 @@ var JSON = module.exports;
      */
     function baseUnset(object, path) {
       path = castPath(path, object);
-      object = parent(object, path);
-      return object == null || delete object[toKey(last(path))];
+
+      // Prevent prototype pollution:
+      // https://github.com/lodash/lodash/security/advisories/GHSA-xxjr-mmjv-4gpg
+      // https://github.com/lodash/lodash/security/advisories/GHSA-f23m-r3pf-42rh
+      var index = -1,
+          length = path.length;
+
+      if (!length) {
+        return true;
+      }
+
+      while (++index < length) {
+        var key = toKey(path[index]);
+
+        // Always block "__proto__" anywhere in the path if it's not expected
+        if (key === '__proto__' && !hasOwnProperty.call(object, '__proto__')) {
+          return false;
+        }
+
+        // Block constructor/prototype as non-terminal traversal keys to prevent
+        // escaping the object graph into built-in constructors and prototypes.
+        if ((key === 'constructor' || key === 'prototype') && index < length - 1) {
+          return false;
+        }
+      }
+
+      var obj = parent(object, path);
+      return obj == null || delete obj[toKey(last(path))];
     }
 
     /**
@@ -54006,7 +54090,7 @@ var JSON = module.exports;
 
     /**
      * Creates an array with all falsey values removed. The values `false`, `null`,
-     * `0`, `""`, `undefined`, and `NaN` are falsey.
+     * `0`, `-0`, `0n`, `""`, `undefined`, and `NaN` are falsy.
      *
      * @static
      * @memberOf _
@@ -54545,7 +54629,7 @@ var JSON = module.exports;
 
       while (++index < length) {
         var pair = pairs[index];
-        result[pair[0]] = pair[1];
+        baseAssignValue(result, pair[0], pair[1]);
       }
       return result;
     }
@@ -61205,6 +61289,8 @@ var JSON = module.exports;
      * **Note:** JavaScript follows the IEEE-754 standard for resolving
      * floating-point values which can produce unexpected results.
      *
+     * **Note:** If `lower` is greater than `upper`, the values are swapped.
+     *
      * @static
      * @memberOf _
      * @since 0.7.0
@@ -61218,8 +61304,15 @@ var JSON = module.exports;
      * _.random(0, 5);
      * // => an integer between 0 and 5
      *
+     * // when lower is greater than upper the values are swapped
+     * _.random(5, 0);
+     * // => an integer between 0 and 5
+     *
      * _.random(5);
      * // => also an integer between 0 and 5
+     *
+     * _.random(-5);
+     * // => an integer between -5 and 0
      *
      * _.random(5, true);
      * // => a floating-point number between 0 and 5
@@ -61822,6 +61915,10 @@ var JSON = module.exports;
      * properties may be accessed as free variables in the template. If a setting
      * object is given, it takes precedence over `_.templateSettings` values.
      *
+     * **Security:** `_.template` is insecure and should not be used. It will be
+     * removed in Lodash v5. Avoid untrusted input. See
+     * [threat model](https://github.com/lodash/lodash/blob/main/threat-model.md).
+     *
      * **Note:** In the development build `_.template` utilizes
      * [sourceURLs](http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/#toc-sourceurl)
      * for easier debugging.
@@ -61929,11 +62026,17 @@ var JSON = module.exports;
         options = undefined;
       }
       string = toString(string);
-      options = assignInWith({}, options, settings, customDefaultsAssignIn);
+      options = assignWith({}, options, settings, customDefaultsAssignIn);
 
-      var imports = assignInWith({}, options.imports, settings.imports, customDefaultsAssignIn),
+      var imports = assignWith({}, options.imports, settings.imports, customDefaultsAssignIn),
           importsKeys = keys(imports),
           importsValues = baseValues(imports, importsKeys);
+
+      arrayEach(importsKeys, function(key) {
+        if (reForbiddenIdentifierChars.test(key)) {
+          throw new Error(INVALID_TEMPL_IMPORTS_ERROR_TEXT);
+        }
+      });
 
       var isEscaping,
           isEvaluating,
@@ -77816,6 +77919,24 @@ class SecureProxyConnectionError extends UndiciError {
   [kSecureProxyConnectionError] = true
 }
 
+const kMessageSizeExceededError = Symbol.for('undici.error.UND_ERR_WS_MESSAGE_SIZE_EXCEEDED')
+class MessageSizeExceededError extends UndiciError {
+  constructor (message) {
+    super(message)
+    this.name = 'MessageSizeExceededError'
+    this.message = message || 'Max decompressed message size exceeded'
+    this.code = 'UND_ERR_WS_MESSAGE_SIZE_EXCEEDED'
+  }
+
+  static [Symbol.hasInstance] (instance) {
+    return instance && instance[kMessageSizeExceededError] === true
+  }
+
+  get [kMessageSizeExceededError] () {
+    return true
+  }
+}
+
 module.exports = {
   AbortError,
   HTTPParserError,
@@ -77839,7 +77960,8 @@ module.exports = {
   ResponseExceededMaxSizeError,
   RequestRetryError,
   ResponseError,
-  SecureProxyConnectionError
+  SecureProxyConnectionError,
+  MessageSizeExceededError
 }
 
 
@@ -77915,6 +78037,10 @@ class Request {
 
     if (upgrade && typeof upgrade !== 'string') {
       throw new InvalidArgumentError('upgrade must be a string')
+    }
+
+    if (upgrade && !isValidHeaderValue(upgrade)) {
+      throw new InvalidArgumentError('invalid upgrade header')
     }
 
     if (headersTimeout != null && (!Number.isFinite(headersTimeout) || headersTimeout < 0)) {
@@ -78197,7 +78323,13 @@ function processHeader (request, key, val) {
       } else if (typeof val[i] === 'object') {
         throw new InvalidArgumentError(`invalid ${key} header`)
       } else {
-        arr.push(`${val[i]}`)
+        // Coerce primitives (and reject unsafe coercions such as functions
+        // with a crafted toString/Symbol.toPrimitive).
+        const str = `${val[i]}`
+        if (!isValidHeaderValue(str)) {
+          throw new InvalidArgumentError(`invalid ${key} header`)
+        }
+        arr.push(str)
       }
     }
     val = arr
@@ -78208,16 +78340,27 @@ function processHeader (request, key, val) {
   } else if (val === null) {
     val = ''
   } else {
+    // Coerce primitives (and reject unsafe coercions such as functions
+    // with a crafted toString/Symbol.toPrimitive).
     val = `${val}`
+    if (!isValidHeaderValue(val)) {
+      throw new InvalidArgumentError(`invalid ${key} header`)
+    }
   }
 
-  if (request.host === null && headerName === 'host') {
+  if (headerName === 'host') {
+    if (request.host !== null) {
+      throw new InvalidArgumentError('duplicate host header')
+    }
     if (typeof val !== 'string') {
       throw new InvalidArgumentError('invalid host header')
     }
     // Consumed by Client
     request.host = val
-  } else if (request.contentLength === null && headerName === 'content-length') {
+  } else if (headerName === 'content-length') {
+    if (request.contentLength !== null) {
+      throw new InvalidArgumentError('duplicate content-length header')
+    }
     request.contentLength = parseInt(val, 10)
     if (!Number.isFinite(request.contentLength)) {
       throw new InvalidArgumentError('invalid content-length header')
@@ -79239,8 +79382,6 @@ function defaultFactory (origin, opts) {
 
 class Agent extends DispatcherBase {
   constructor ({ factory = defaultFactory, maxRedirections = 0, connect, ...options } = {}) {
-    super()
-
     if (typeof factory !== 'function') {
       throw new InvalidArgumentError('factory must be a function.')
     }
@@ -79252,6 +79393,8 @@ class Agent extends DispatcherBase {
     if (!Number.isInteger(maxRedirections) || maxRedirections < 0) {
       throw new InvalidArgumentError('maxRedirections must be a positive number')
     }
+
+    super(options)
 
     if (connect && typeof connect !== 'function') {
       connect = { ...connect }
@@ -79579,6 +79722,7 @@ const {
   RequestContentLengthMismatchError,
   ResponseContentLengthMismatchError,
   RequestAbortedError,
+  InvalidArgumentError,
   HeadersTimeoutError,
   HeadersOverflowError,
   SocketError,
@@ -79626,6 +79770,9 @@ const EMPTY_BUF = Buffer.alloc(0)
 const FastBuffer = Buffer[Symbol.species]
 const addListener = util.addListener
 const removeAllListeners = util.removeAllListeners
+const kIdleSocketValidation = Symbol('kIdleSocketValidation')
+const kIdleSocketValidationTimeout = Symbol('kIdleSocketValidationTimeout')
+const kSocketUsed = Symbol('kSocketUsed')
 
 let extractBody
 
@@ -79848,27 +79995,69 @@ class Parser {
 
       const offset = llhttp.llhttp_get_error_pos(this.ptr) - currentBufferPtr
 
-      if (ret === constants.ERROR.PAUSED_UPGRADE) {
-        this.onUpgrade(data.slice(offset))
-      } else if (ret === constants.ERROR.PAUSED) {
-        this.paused = true
-        socket.unshift(data.slice(offset))
-      } else if (ret !== constants.ERROR.OK) {
-        const ptr = llhttp.llhttp_get_error_reason(this.ptr)
-        let message = ''
-        /* istanbul ignore else: difficult to make a test case for */
-        if (ptr) {
-          const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0)
-          message =
-            'Response does not match the HTTP/1.1 protocol (' +
-            Buffer.from(llhttp.memory.buffer, ptr, len).toString() +
-            ')'
+      if (ret !== constants.ERROR.OK) {
+        const body = data.subarray(offset)
+
+        if (ret === constants.ERROR.PAUSED_UPGRADE) {
+          this.onUpgrade(body)
+        } else if (ret === constants.ERROR.PAUSED) {
+          this.paused = true
+          socket.unshift(body)
+        } else {
+          throw this.createError(ret, body)
         }
-        throw new HTTPParserError(message, constants.ERROR[ret], data.slice(offset))
       }
     } catch (err) {
       util.destroy(socket, err)
     }
+  }
+
+  finish () {
+    assert(currentParser === null)
+    assert(this.ptr != null)
+    assert(!this.paused)
+
+    const { llhttp } = this
+
+    let ret
+
+    try {
+      currentParser = this
+      ret = llhttp.llhttp_finish(this.ptr)
+    } finally {
+      currentParser = null
+    }
+
+    if (ret === constants.ERROR.OK) {
+      return null
+    }
+
+    if (ret === constants.ERROR.PAUSED || ret === constants.ERROR.PAUSED_UPGRADE) {
+      this.paused = true
+      return null
+    }
+
+    return this.createError(ret, EMPTY_BUF)
+  }
+
+  createError (ret, data) {
+    const { llhttp, contentLength, bytesRead } = this
+
+    if (contentLength && bytesRead !== parseInt(contentLength, 10)) {
+      return new ResponseContentLengthMismatchError()
+    }
+
+    const ptr = llhttp.llhttp_get_error_reason(this.ptr)
+    let message = ''
+    if (ptr) {
+      const len = new Uint8Array(llhttp.memory.buffer, ptr).indexOf(0)
+      message =
+        'Response does not match the HTTP/1.1 protocol (' +
+        Buffer.from(llhttp.memory.buffer, ptr, len).toString() +
+        ')'
+    }
+
+    return new HTTPParserError(message, constants.ERROR[ret], data)
   }
 
   destroy () {
@@ -79895,6 +80084,11 @@ class Parser {
 
     /* istanbul ignore next: difficult to make a test case for */
     if (socket.destroyed) {
+      return -1
+    }
+
+    if (client[kRunning] === 0) {
+      util.destroy(socket, new SocketError('bad response', util.getSocketInfo(socket)))
       return -1
     }
 
@@ -79998,6 +80192,11 @@ class Parser {
 
     /* istanbul ignore next: difficult to make a test case for */
     if (socket.destroyed) {
+      return -1
+    }
+
+    if (client[kRunning] === 0) {
+      util.destroy(socket, new SocketError('bad response', util.getSocketInfo(socket)))
       return -1
     }
 
@@ -80174,6 +80373,7 @@ class Parser {
     request.onComplete(headers)
 
     client[kQueue][client[kRunningIdx]++] = null
+    socket[kSocketUsed] = true
 
     if (socket[kWriting]) {
       assert(client[kRunning] === 0)
@@ -80232,6 +80432,9 @@ async function connectH1 (client, socket) {
   socket[kWriting] = false
   socket[kReset] = false
   socket[kBlocking] = false
+  socket[kIdleSocketValidation] = 0
+  socket[kIdleSocketValidationTimeout] = null
+  socket[kSocketUsed] = false
   socket[kParser] = new Parser(client, socket, llhttpInstance)
 
   addListener(socket, 'error', function (err) {
@@ -80242,8 +80445,11 @@ async function connectH1 (client, socket) {
     // On Mac OS, we get an ECONNRESET even if there is a full body to be forwarded
     // to the user.
     if (err.code === 'ECONNRESET' && parser.statusCode && !parser.shouldKeepAlive) {
-      // We treat all incoming data so for as a valid response.
-      parser.onMessageComplete()
+      const parserErr = parser.finish()
+      if (parserErr) {
+        this[kError] = parserErr
+        this[kClient][kOnError](parserErr)
+      }
       return
     }
 
@@ -80262,8 +80468,10 @@ async function connectH1 (client, socket) {
     const parser = this[kParser]
 
     if (parser.statusCode && !parser.shouldKeepAlive) {
-      // We treat all incoming data so far as a valid response.
-      parser.onMessageComplete()
+      const parserErr = parser.finish()
+      if (parserErr) {
+        util.destroy(this, parserErr)
+      }
       return
     }
 
@@ -80273,10 +80481,11 @@ async function connectH1 (client, socket) {
     const client = this[kClient]
     const parser = this[kParser]
 
+    clearIdleSocketValidation(this)
+
     if (parser) {
       if (!this[kError] && parser.statusCode && !parser.shouldKeepAlive) {
-        // We treat all incoming data so far as a valid response.
-        parser.onMessageComplete()
+        this[kError] = parser.finish() || this[kError]
       }
 
       this[kParser].destroy()
@@ -80339,7 +80548,7 @@ async function connectH1 (client, socket) {
       return socket.destroyed
     },
     busy (request) {
-      if (socket[kWriting] || socket[kReset] || socket[kBlocking]) {
+      if (socket[kWriting] || socket[kReset] || socket[kBlocking] || socket[kIdleSocketValidation] === 1) {
         return true
       }
 
@@ -80377,6 +80586,31 @@ async function connectH1 (client, socket) {
   }
 }
 
+function clearIdleSocketValidation (socket) {
+  if (socket[kIdleSocketValidationTimeout]) {
+    clearTimeout(socket[kIdleSocketValidationTimeout])
+    socket[kIdleSocketValidationTimeout] = null
+  }
+
+  socket[kIdleSocketValidation] = 0
+}
+
+function scheduleIdleSocketValidation (client, socket) {
+  socket[kIdleSocketValidation] = 1
+  socket[kIdleSocketValidationTimeout] = setTimeout(() => {
+    socket[kIdleSocketValidationTimeout] = null
+    socket[kIdleSocketValidation] = 2
+
+    if (client[kSocket] === socket && !socket.destroyed) {
+      client[kResume]()
+    }
+  }, 0)
+  socket[kIdleSocketValidationTimeout].unref?.()
+}
+
+/**
+ * @param {import('./client.js')} client
+ */
 function resumeH1 (client) {
   const socket = client[kSocket]
 
@@ -80389,6 +80623,32 @@ function resumeH1 (client) {
     } else if (socket[kNoRef] && socket.ref) {
       socket.ref()
       socket[kNoRef] = false
+    }
+
+    if (client[kRunning] === 0 && client[kPending] > 0 && socket[kSocketUsed]) {
+      if (socket[kIdleSocketValidation] === 0) {
+        scheduleIdleSocketValidation(client, socket)
+        socket[kParser].readMore()
+        if (socket.destroyed) {
+          return
+        }
+        return
+      }
+
+      if (socket[kIdleSocketValidation] === 1) {
+        socket[kParser].readMore()
+        if (socket.destroyed) {
+          return
+        }
+        return
+      }
+    }
+
+    if (client[kRunning] === 0) {
+      socket[kParser].readMore()
+      if (socket.destroyed) {
+        return
+      }
     }
 
     if (client[kSize] === 0) {
@@ -80446,8 +80706,16 @@ function writeH1 (client, request) {
     }
     body = bodyStream.stream
     contentLength = bodyStream.length
-  } else if (util.isBlobLike(body) && request.contentType == null && body.type) {
-    headers.push('content-type', body.type)
+  } else if (util.isBlobLike(body) && request.contentType == null) {
+    const contentType = body.type
+    if (contentType) {
+      const contentTypeValue = `${contentType}`
+      if (!util.isValidHeaderValue(contentTypeValue)) {
+        util.errorRequest(client, request, new InvalidArgumentError('invalid content-type header'))
+        return false
+      }
+      headers.push('content-type', contentTypeValue)
+    }
   }
 
   if (body && typeof body.read === 'function') {
@@ -80484,6 +80752,7 @@ function writeH1 (client, request) {
   }
 
   const socket = client[kSocket]
+  clearIdleSocketValidation(socket)
 
   const abort = (err) => {
     if (request.aborted || request.completed) {
@@ -81805,9 +82074,10 @@ class Client extends DispatcherBase {
     autoSelectFamilyAttemptTimeout,
     // h2
     maxConcurrentStreams,
-    allowH2
+    allowH2,
+    webSocket
   } = {}) {
-    super()
+    super({ webSocket })
 
     if (keepAlive !== undefined) {
       throw new InvalidArgumentError('unsupported keepAlive, use pipelining=0 instead')
@@ -82340,15 +82610,24 @@ const { kDestroy, kClose, kClosed, kDestroyed, kDispatch, kInterceptors } = __nc
 const kOnDestroyed = Symbol('onDestroyed')
 const kOnClosed = Symbol('onClosed')
 const kInterceptedDispatch = Symbol('Intercepted Dispatch')
+const kWebSocketOptions = Symbol('webSocketOptions')
 
 class DispatcherBase extends Dispatcher {
-  constructor () {
+  constructor (opts) {
     super()
 
     this[kDestroyed] = false
     this[kOnDestroyed] = null
     this[kClosed] = false
     this[kOnClosed] = []
+    this[kWebSocketOptions] = opts?.webSocket ?? {}
+  }
+
+  get webSocketOptions () {
+    return {
+      maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
+      maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
+    }
   }
 
   get destroyed () {
@@ -82912,8 +83191,8 @@ const kRemoveClient = Symbol('remove client')
 const kStats = Symbol('stats')
 
 class PoolBase extends DispatcherBase {
-  constructor () {
-    super()
+  constructor (opts) {
+    super(opts)
 
     this[kQueue] = new FixedQueue()
     this[kClients] = []
@@ -83173,8 +83452,6 @@ class Pool extends PoolBase {
     allowH2,
     ...options
   } = {}) {
-    super()
-
     if (connections != null && (!Number.isFinite(connections) || connections < 0)) {
       throw new InvalidArgumentError('invalid connections')
     }
@@ -83198,6 +83475,8 @@ class Pool extends PoolBase {
         ...connect
       })
     }
+
+    super(options)
 
     this[kInterceptors] = options.interceptors?.Pool && Array.isArray(options.interceptors.Pool)
       ? options.interceptors.Pool
@@ -83923,6 +84202,28 @@ function calculateRetryAfterHeader (retryAfter) {
   return new Date(retryAfter).getTime() - current
 }
 
+function validatePartialResponseContentLength (headers, range, statusCode, retryCount) {
+  const contentLength = headers['content-length']
+  if (contentLength == null) {
+    return null
+  }
+
+  if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
+    return null
+  }
+
+  const length = Number(contentLength)
+  const expectedLength = range.end - range.start + 1
+  if (!Number.isFinite(length) || length !== expectedLength) {
+    return new RequestRetryError('Content-Length mismatch', statusCode, {
+      headers,
+      data: { count: retryCount }
+    })
+  }
+
+  return null
+}
+
 class RetryHandler {
   constructor (opts, handlers) {
     const { retryOptions, ...dispatchOpts } = opts
@@ -84137,6 +84438,12 @@ class RetryHandler {
         return false
       }
 
+      const contentLengthError = validatePartialResponseContentLength(headers, contentRange, statusCode, this.retryCount)
+      if (contentLengthError != null) {
+        this.abort(contentLengthError)
+        return false
+      }
+
       const { start, size, end = size - 1 } = contentRange
 
       assert(this.start === start, 'content-range mismatch')
@@ -84158,6 +84465,12 @@ class RetryHandler {
             resume,
             statusMessage
           )
+        }
+
+        const contentLengthError = validatePartialResponseContentLength(headers, range, statusCode, this.retryCount)
+        if (contentLengthError != null) {
+          this.abort(contentLengthError)
+          return false
         }
 
         const { start, size, end = size - 1 } = range
@@ -88283,32 +88596,25 @@ function parseUnparsedAttributes (unparsedAttributes, cookieAttributeList = {}) 
     // If the attribute-name case-insensitively matches the string
     // "SameSite", the user agent MUST process the cookie-av as follows:
 
-    // 1. Let enforcement be "Default".
-    let enforcement = 'Default'
-
     const attributeValueLowercase = attributeValue.toLowerCase()
-    // 2. If cookie-av's attribute-value is a case-insensitive match for
-    //    "None", set enforcement to "None".
-    if (attributeValueLowercase.includes('none')) {
-      enforcement = 'None'
-    }
 
-    // 3. If cookie-av's attribute-value is a case-insensitive match for
-    //    "Strict", set enforcement to "Strict".
-    if (attributeValueLowercase.includes('strict')) {
-      enforcement = 'Strict'
+    // 1. If cookie-av's attribute-value is a case-insensitive match for
+    //    "None", append an attribute to the cookie-attribute-list with an
+    //    attribute-name of "SameSite" and an attribute-value of "None".
+    if (attributeValueLowercase === 'none') {
+      cookieAttributeList.sameSite = 'None'
+    } else if (attributeValueLowercase === 'strict') {
+      // 2. If cookie-av's attribute-value is a case-insensitive match for
+      //    "Strict", append an attribute to the cookie-attribute-list with
+      //    an attribute-name of "SameSite" and an attribute-value of
+      //    "Strict".
+      cookieAttributeList.sameSite = 'Strict'
+    } else if (attributeValueLowercase === 'lax') {
+      // 3. If cookie-av's attribute-value is a case-insensitive match for
+      //    "Lax", append an attribute to the cookie-attribute-list with an
+      //    attribute-name of "SameSite" and an attribute-value of "Lax".
+      cookieAttributeList.sameSite = 'Lax'
     }
-
-    // 4. If cookie-av's attribute-value is a case-insensitive match for
-    //    "Lax", set enforcement to "Lax".
-    if (attributeValueLowercase.includes('lax')) {
-      enforcement = 'Lax'
-    }
-
-    // 5. Append an attribute to the cookie-attribute-list with an
-    //    attribute-name of "SameSite" and an attribute-value of
-    //    enforcement.
-    cookieAttributeList.sameSite = enforcement
   } else {
     cookieAttributeList.unparsed ??= []
 
@@ -88438,7 +88744,7 @@ function validateCookiePath (path) {
 
     if (
       code < 0x20 || // exclude CTLs (0-31)
-      code === 0x7F || // DEL
+      code > 0x7E || // exclude DEL and non-ascii
       code === 0x3B // ;
     ) {
       throw new Error('Invalid cookie path')
@@ -88447,16 +88753,80 @@ function validateCookiePath (path) {
 }
 
 /**
- * I have no idea why these values aren't allowed to be honest,
- * but Deno tests these. - Khafra
+ * <let-dig> ::= <letter> | <digit>
+ *
+ * <letter> ::= any one of the 52 alphabetic characters A through Z in
+ * upper case and a through z in lower case
+ *
+ * <digit> ::= any one of the ten digits 0 through 9r
+ *
+ * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+ * @param {number} code
+ */
+function isLetterOrDigit (code) {
+  return (
+    (code >= 0x30 && code <= 0x39) || // 0-9
+    (code >= 0x41 && code <= 0x5A) || // A-Z
+    (code >= 0x61 && code <= 0x7A) // a-z
+  )
+}
+
+/**
+ * Validates a cookie domain against the "preferred name syntax".
+ *
+ * <domain>      ::= <subdomain> | " "
+ * <subdomain>   ::= <label> | <subdomain> "." <label>
+ * <label>       ::= <let-dig> [ [ <ldh-str> ] <let-dig> ]
+ * <ldh-str>     ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
+ * <let-dig-hyp> ::= <let-dig> | "-"
+ *
+ * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+ * @see https://www.rfc-editor.org/rfc/rfc1123#section-2.1
+ * @see https://www.rfc-editor.org/rfc/rfc1035#section-2.3.4
  * @param {string} domain
  */
 function validateCookieDomain (domain) {
-  if (
-    domain.startsWith('-') ||
-    domain.endsWith('.') ||
-    domain.endsWith('-')
-  ) {
+  // <domain> ::= <subdomain> | " "
+  if (domain === ' ') {
+    return
+  }
+
+  if (domain.length > 255) {
+    throw new Error('Invalid cookie domain')
+  }
+
+  let labelLength = 0
+
+  for (let i = 0; i < domain.length; ++i) {
+    const code = domain.charCodeAt(i)
+
+    if (code === 0x2E) {
+      if (labelLength === 0) {
+        throw new Error('Invalid cookie domain')
+      }
+
+      if (domain.charCodeAt(i - 1) === 0x2D) { // "-"
+        throw new Error('Invalid cookie domain')
+      }
+
+      labelLength = 0
+      continue
+    }
+
+    if (labelLength === 0 && !isLetterOrDigit(code)) {
+      throw new Error('Invalid cookie domain')
+    }
+
+    if (!isLetterOrDigit(code) && code !== 0x2D) { // "-"
+      throw new Error('Invalid cookie domain')
+    }
+
+    if (++labelLength > 63) {
+      throw new Error('Invalid cookie domain')
+    }
+  }
+
+  if (labelLength === 0 || domain.charCodeAt(domain.length - 1) === 0x2D) { // "-"
     throw new Error('Invalid cookie domain')
   }
 }
@@ -88599,7 +88969,13 @@ function stringify (cookie) {
 
     const [key, ...value] = part.split('=')
 
-    out.push(`${key.trim()}=${value.join('=')}`)
+    const trimmedKey = key.trim()
+    const joinedValue = value.join('=')
+
+    validateCookieName(trimmedKey)
+    validateCookieValue(joinedValue)
+
+    out.push(`${trimmedKey}=${joinedValue}`)
   }
 
   return out.join('; ')
@@ -101008,6 +101384,7 @@ module.exports = {
 
 const { createInflateRaw, Z_DEFAULT_WINDOWBITS } = __nccwpck_require__(8522)
 const { isValidClientWindowBits } = __nccwpck_require__(8625)
+const { MessageSizeExceededError } = __nccwpck_require__(8707)
 
 const tail = Buffer.from([0x00, 0x00, 0xff, 0xff])
 const kBuffer = Symbol('kBuffer')
@@ -101019,17 +101396,29 @@ class PerMessageDeflate {
 
   #options = {}
 
-  constructor (extensions) {
+  #maxPayloadSize = 0
+
+  /**
+   * @param {Map<string, string>} extensions
+   */
+  constructor (extensions, options) {
     this.#options.serverNoContextTakeover = extensions.has('server_no_context_takeover')
     this.#options.serverMaxWindowBits = extensions.get('server_max_window_bits')
+
+    this.#maxPayloadSize = options.maxPayloadSize
   }
 
+  /**
+   * Decompress a compressed payload.
+   * @param {Buffer} chunk Compressed data
+   * @param {boolean} fin Final fragment flag
+   * @param {Function} callback Callback function
+   */
   decompress (chunk, fin, callback) {
     // An endpoint uses the following algorithm to decompress a message.
     // 1.  Append 4 octets of 0x00 0x00 0xff 0xff to the tail end of the
     //     payload of the message.
     // 2.  Decompress the resulting data using DEFLATE.
-
     if (!this.#inflate) {
       let windowBits = Z_DEFAULT_WINDOWBITS
 
@@ -101042,13 +101431,26 @@ class PerMessageDeflate {
         windowBits = Number.parseInt(this.#options.serverMaxWindowBits)
       }
 
-      this.#inflate = createInflateRaw({ windowBits })
+      try {
+        this.#inflate = createInflateRaw({ windowBits })
+      } catch (err) {
+        callback(err)
+        return
+      }
       this.#inflate[kBuffer] = []
       this.#inflate[kLength] = 0
 
       this.#inflate.on('data', (data) => {
-        this.#inflate[kBuffer].push(data)
         this.#inflate[kLength] += data.length
+
+        if (this.#maxPayloadSize > 0 && this.#inflate[kLength] > this.#maxPayloadSize) {
+          callback(new MessageSizeExceededError())
+          this.#inflate.removeAllListeners()
+          this.#inflate = null
+          return
+        }
+
+        this.#inflate[kBuffer].push(data)
       })
 
       this.#inflate.on('error', (err) => {
@@ -101063,6 +101465,10 @@ class PerMessageDeflate {
     }
 
     this.#inflate.flush(() => {
+      if (!this.#inflate) {
+        return
+      }
+
       const full = Buffer.concat(this.#inflate[kBuffer], this.#inflate[kLength])
 
       this.#inflate[kBuffer].length = 0
@@ -101102,6 +101508,12 @@ const {
 const { WebsocketFrameSend } = __nccwpck_require__(3264)
 const { closeWebSocketConnection } = __nccwpck_require__(6897)
 const { PerMessageDeflate } = __nccwpck_require__(9469)
+const { MessageSizeExceededError } = __nccwpck_require__(8707)
+
+function failWebsocketConnectionWithCode (ws, code, reason) {
+  closeWebSocketConnection(ws, code, reason, Buffer.byteLength(reason))
+  failWebsocketConnection(ws, reason)
+}
 
 // This code was influenced by ws released under the MIT license.
 // Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
@@ -101110,6 +101522,7 @@ const { PerMessageDeflate } = __nccwpck_require__(9469)
 
 class ByteParser extends Writable {
   #buffers = []
+  #fragmentsBytes = 0
   #byteOffset = 0
   #loop = false
 
@@ -101121,14 +101534,27 @@ class ByteParser extends Writable {
   /** @type {Map<string, PerMessageDeflate>} */
   #extensions
 
-  constructor (ws, extensions) {
+  /** @type {number} */
+  #maxFragments
+
+  /** @type {number} */
+  #maxPayloadSize
+
+  /**
+   * @param {import('./websocket').WebSocket} ws
+   * @param {Map<string, string>|null} extensions
+   * @param {{ maxFragments?: number, maxPayloadSize?: number }} [options]
+   */
+  constructor (ws, extensions, options = {}) {
     super()
 
     this.ws = ws
     this.#extensions = extensions == null ? new Map() : extensions
+    this.#maxFragments = options.maxFragments ?? 0
+    this.#maxPayloadSize = options.maxPayloadSize ?? 0
 
     if (this.#extensions.has('permessage-deflate')) {
-      this.#extensions.set('permessage-deflate', new PerMessageDeflate(extensions))
+      this.#extensions.set('permessage-deflate', new PerMessageDeflate(extensions, options))
     }
   }
 
@@ -101142,6 +101568,19 @@ class ByteParser extends Writable {
     this.#loop = true
 
     this.run(callback)
+  }
+
+  #validatePayloadLength () {
+    if (
+      this.#maxPayloadSize > 0 &&
+      !isControlFrame(this.#info.opcode) &&
+      this.#info.payloadLength + this.#fragmentsBytes > this.#maxPayloadSize
+    ) {
+      failWebsocketConnectionWithCode(this.ws, 1009, 'Payload size exceeds maximum allowed size')
+      return false
+    }
+
+    return true
   }
 
   /**
@@ -101232,6 +101671,10 @@ class ByteParser extends Writable {
         if (payloadLength <= 125) {
           this.#info.payloadLength = payloadLength
           this.#state = parserStates.READ_DATA
+
+          if (!this.#validatePayloadLength()) {
+            return
+          }
         } else if (payloadLength === 126) {
           this.#state = parserStates.PAYLOADLENGTH_16
         } else if (payloadLength === 127) {
@@ -101256,6 +101699,10 @@ class ByteParser extends Writable {
 
         this.#info.payloadLength = buffer.readUInt16BE(0)
         this.#state = parserStates.READ_DATA
+
+        if (!this.#validatePayloadLength()) {
+          return
+        }
       } else if (this.#state === parserStates.PAYLOADLENGTH_64) {
         if (this.#byteOffset < 8) {
           return callback()
@@ -101263,6 +101710,7 @@ class ByteParser extends Writable {
 
         const buffer = this.consume(8)
         const upper = buffer.readUInt32BE(0)
+        const lower = buffer.readUInt32BE(4)
 
         // 2^31 is the maximum bytes an arraybuffer can contain
         // on 32-bit systems. Although, on 64-bit systems, this is
@@ -101270,15 +101718,17 @@ class ByteParser extends Writable {
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Invalid_array_length
         // https://source.chromium.org/chromium/chromium/src/+/main:v8/src/common/globals.h;drc=1946212ac0100668f14eb9e2843bdd846e510a1e;bpv=1;bpt=1;l=1275
         // https://source.chromium.org/chromium/chromium/src/+/main:v8/src/objects/js-array-buffer.h;l=34;drc=1946212ac0100668f14eb9e2843bdd846e510a1e
-        if (upper > 2 ** 31 - 1) {
+        if (upper !== 0 || lower > 2 ** 31 - 1) {
           failWebsocketConnection(this.ws, 'Received payload length > 2^31 bytes.')
           return
         }
 
-        const lower = buffer.readUInt32BE(4)
-
-        this.#info.payloadLength = (upper << 8) + lower
+        this.#info.payloadLength = lower
         this.#state = parserStates.READ_DATA
+
+        if (!this.#validatePayloadLength()) {
+          return
+        }
       } else if (this.#state === parserStates.READ_DATA) {
         if (this.#byteOffset < this.#info.payloadLength) {
           return callback()
@@ -101291,42 +101741,58 @@ class ByteParser extends Writable {
           this.#state = parserStates.INFO
         } else {
           if (!this.#info.compressed) {
-            this.#fragments.push(body)
+            if (!this.writeFragments(body)) {
+              return
+            }
+
+            if (this.#maxPayloadSize > 0 && this.#fragmentsBytes > this.#maxPayloadSize) {
+              failWebsocketConnectionWithCode(this.ws, 1009, new MessageSizeExceededError().message)
+              return
+            }
 
             // If the frame is not fragmented, a message has been received.
             // If the frame is fragmented, it will terminate with a fin bit set
             // and an opcode of 0 (continuation), therefore we handle that when
             // parsing continuation frames, not here.
             if (!this.#info.fragmented && this.#info.fin) {
-              const fullMessage = Buffer.concat(this.#fragments)
-              websocketMessageReceived(this.ws, this.#info.binaryType, fullMessage)
-              this.#fragments.length = 0
+              websocketMessageReceived(this.ws, this.#info.binaryType, this.consumeFragments())
             }
 
             this.#state = parserStates.INFO
           } else {
-            this.#extensions.get('permessage-deflate').decompress(body, this.#info.fin, (error, data) => {
-              if (error) {
-                closeWebSocketConnection(this.ws, 1007, error.message, error.message.length)
-                return
-              }
+            this.#extensions.get('permessage-deflate').decompress(
+              body,
+              this.#info.fin,
+              (error, data) => {
+                if (error) {
+                  const code = error instanceof MessageSizeExceededError ? 1009 : 1007
+                  failWebsocketConnectionWithCode(this.ws, code, error.message)
+                  return
+                }
 
-              this.#fragments.push(data)
+                if (!this.writeFragments(data)) {
+                  return
+                }
 
-              if (!this.#info.fin) {
-                this.#state = parserStates.INFO
+                if (this.#maxPayloadSize > 0 && this.#fragmentsBytes > this.#maxPayloadSize) {
+                  failWebsocketConnectionWithCode(this.ws, 1009, new MessageSizeExceededError().message)
+                  return
+                }
+
+                if (!this.#info.fin) {
+                  this.#state = parserStates.INFO
+                  this.#loop = true
+                  this.run(callback)
+                  return
+                }
+
+                websocketMessageReceived(this.ws, this.#info.binaryType, this.consumeFragments())
+
                 this.#loop = true
+                this.#state = parserStates.INFO
                 this.run(callback)
-                return
               }
-
-              websocketMessageReceived(this.ws, this.#info.binaryType, Buffer.concat(this.#fragments))
-
-              this.#loop = true
-              this.#state = parserStates.INFO
-              this.#fragments.length = 0
-              this.run(callback)
-            })
+            )
 
             this.#loop = false
             break
@@ -101376,6 +101842,35 @@ class ByteParser extends Writable {
     this.#byteOffset -= n
 
     return buffer
+  }
+
+  writeFragments (fragment) {
+    if (
+      this.#maxFragments > 0 &&
+      this.#fragments.length === this.#maxFragments
+    ) {
+      failWebsocketConnectionWithCode(this.ws, 1008, 'Too many message fragments')
+      return false
+    }
+
+    this.#fragmentsBytes += fragment.length
+    this.#fragments.push(fragment)
+    return true
+  }
+
+  consumeFragments () {
+    const fragments = this.#fragments
+
+    if (fragments.length === 1) {
+      this.#fragmentsBytes = 0
+      return fragments.shift()
+    }
+
+    const output = Buffer.concat(fragments, this.#fragmentsBytes)
+    this.#fragments = []
+    this.#fragmentsBytes = 0
+
+    return output
   }
 
   parseCloseBody (data) {
@@ -101914,6 +102409,12 @@ function parseExtensions (extensions) {
  * @param {string} value
  */
 function isValidClientWindowBits (value) {
+  // Must have at least one character
+  if (value.length === 0) {
+    return false
+  }
+
+  // Check all characters are ASCII digits
   for (let i = 0; i < value.length; i++) {
     const byte = value.charCodeAt(i)
 
@@ -101922,7 +102423,9 @@ function isValidClientWindowBits (value) {
     }
   }
 
-  return true
+  // Check numeric range: zlib requires windowBits in range 8-15
+  const num = Number.parseInt(value, 10)
+  return num >= 8 && num <= 15
 }
 
 // https://nodejs.org/api/intl.html#detecting-internationalization-support
@@ -102401,11 +102904,18 @@ class WebSocket extends EventTarget {
    * @see https://websockets.spec.whatwg.org/#feedback-from-the-protocol
    */
   #onConnectionEstablished (response, parsedExtensions) {
-    // processResponse is called when the "response’s header list has been received and initialized."
+    // processResponse is called when the "response's header list has been received and initialized."
     // once this happens, the connection is open
     this[kResponse] = response
 
-    const parser = new ByteParser(this, parsedExtensions)
+    const webSocketOptions = this[kController]?.dispatcher?.webSocketOptions
+    const maxFragments = webSocketOptions?.maxFragments
+    const maxPayloadSize = webSocketOptions?.maxPayloadSize
+
+    const parser = new ByteParser(this, parsedExtensions, {
+      maxFragments,
+      maxPayloadSize
+    })
     parser.on('drain', onParserDrain)
     parser.on('error', onParserError.bind(this))
 
@@ -104375,7 +104885,7 @@ module.exports = LRUCache
 
 /***/ }),
 
-/***/ 7269:
+/***/ 1677:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
