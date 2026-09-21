@@ -42,7 +42,7 @@
     "eslint-plugin-prettier": "5.5.5",
     "globals": "^17.4.0",
     "jest": "30.2.0",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.3.2",
     "prettier": "3.8.1",
     "ts-jest": "29.4.6",
     "typescript": "5.9.3",
@@ -52,6 +52,10 @@
     "simple-git": ">=3.25.0"
   },
   "resolutions": {
-    "simple-git": ">=3.25.0"
+    "simple-git": ">=3.25.0",
+    "browserslist": "^4.29.0",
+    "@babel/core": "^7.28.6",
+    "@humanfs/node": ">=0.16.8",
+    "form-data": "^4.0.6"
   }
 }
