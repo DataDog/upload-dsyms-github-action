@@ -8,7 +8,7 @@
     "format": "prettier --write '**/*.ts'",
     "format-check": "prettier --check '**/*.ts'",
     "lint": "eslint --config eslint.config.mjs src/**/*.ts",
-    "package": "ncc build --source-map --license licenses.txt",
+    "package": "ncc build --source-map --license licenses.txt --external glob && ncc build node_modules/glob/dist/commonjs/index.js --source-map --license licenses.txt --out dist/node_modules/glob",
     "test": "jest",
     "all": "yarn build && yarn format && yarn lint && yarn package && yarn test"
   },
@@ -29,7 +29,8 @@
     "@actions/core": "2.0.3",
     "@datadog/datadog-ci": "5.9.0",
     "@datadog/datadog-ci-base": "5.9.0",
-    "axios": "^1.20.0"
+    "axios": "^1.20.0",
+    "glob": "13.0.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
@@ -42,7 +43,7 @@
     "eslint-plugin-prettier": "5.5.5",
     "globals": "^17.4.0",
     "jest": "30.2.0",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.3.2",
     "prettier": "3.8.1",
     "ts-jest": "29.4.6",
     "typescript": "5.9.3",
@@ -53,6 +54,14 @@
   },
   "resolutions": {
     "simple-git": ">=3.25.0",
-    "sprintf-js": "^1.1.3"
+    "browserslist": "^4.29.3",
+    "@babel/core": "^7.28.6",
+    "@humanfs/node": "^0.16.8",
+    "fast-uri": "^3.1.8",
+    "form-data": "^4.0.6",
+    "undici": "^6.28.1",
+    "**/@datadog/datadog-ci-base/js-yaml": "^4.3.2",
+    "**/@istanbuljs/load-nyc-config/js-yaml": "^4.3.2",
+    "socks": "^2.8.10"
   }
 }
